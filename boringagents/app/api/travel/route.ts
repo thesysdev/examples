@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Message as VercelChatMessage, StreamingTextResponse } from "ai";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import OpenAI from "openai";
 
-import { ChatOpenAI } from "@langchain/openai";
-import { PromptTemplate } from "@langchain/core/prompts";
-import { HttpResponseOutputParser } from "langchain/output_parsers";
-
-export const runtime = "edge";
-
-const formatMessage = (message: VercelChatMessage) => {
+const formatMessage = (message: { role: string; content: string }) => {
   return `${message.role}: ${message.content}`;
 };
 
@@ -25,17 +21,70 @@ Please gather the following essential information if not already provided:
 
 Guidelines:
 1. If any essential information is missing, ask for it politely
-2. Provide specific recommendations based on the user's preferences
-3. Consider practical aspects like weather, peak seasons, and local events
-4. Break down budget suggestions for accommodation, activities, and transportation
-5. Offer alternative options when relevant
-6. Include insider tips and local recommendations
+2. When appropriate, use the tools to provide specific flight and hotel information
+3. Provide specific recommendations based on the user's preferences
+4. Consider practical aspects like weather, peak seasons, and local events
+5. Break down budget suggestions for accommodation, activities, and transportation
+6. Offer alternative options when relevant
+7. Include insider tips and local recommendations
 
 Current conversation:
 {chat_history}
 
 User: {input}
 AI:`;
+
+// Define Zod schemas
+const FlightDetailsSchema = z.object({
+  from: z.string().describe("Departure city or airport code"),
+  to: z.string().describe("Destination city or airport code"),
+  date: z.string().describe("Date of travel in YYYY-MM-DD format"),
+  passengers: z.number().describe("Number of passengers"),
+});
+
+const HotelSearchSchema = z.object({
+  location: z.string().describe("City or area to search for hotels"),
+  checkIn: z.string().describe("Check-in date in YYYY-MM-DD format"),
+  checkOut: z.string().describe("Check-out date in YYYY-MM-DD format"),
+  guests: z.number().describe("Number of guests"),
+});
+
+// Type inference from Zod schemas
+type FlightDetails = z.infer<typeof FlightDetailsSchema>;
+type HotelSearch = z.infer<typeof HotelSearchSchema>;
+
+// Tool functions with type safety
+async function checkFlights(params: FlightDetails) {
+  // Implement flight search logic here
+  // This is a placeholder that you would replace with actual API calls
+  return {
+    available: true,
+    flights: [
+      {
+        airline: "Sample Airline",
+        price: "$500",
+        departure: "10:00 AM",
+        arrival: "2:00 PM",
+      },
+    ],
+  };
+}
+
+async function searchHotels(params: HotelSearch) {
+  // Implement hotel search logic here
+  // This is a placeholder that you would replace with actual API calls
+  return {
+    available: true,
+    hotels: [
+      {
+        name: "Sample Hotel",
+        price: "$200/night",
+        rating: 4.5,
+        amenities: ["WiFi", "Pool", "Breakfast"],
+      },
+    ],
+  };
+}
 
 /**
  * This handler initializes and calls a simple chain with a prompt,
@@ -47,45 +96,36 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const messages = body.messages ?? [];
-    const formattedPreviousMessages = messages.slice(0, -1).map(formatMessage);
-    const currentMessageContent = messages[messages.length - 1].content;
-    const prompt = PromptTemplate.fromTemplate(TEMPLATE);
 
-    /**
-     * You can also try e.g.:
-     *
-     * import { ChatAnthropic } from "@langchain/anthropic";
-     * const model = new ChatAnthropic({});
-     *
-     * See a full list of supported models at:
-     * https://js.langchain.com/docs/modules/model_io/models/
-     */
-    const model = new ChatOpenAI({
-      temperature: 0.8,
+    const client = new OpenAI();
+
+    // @ts-ignore
+    const runner = client.beta.chat.completions.runTools({
       model: "gpt-4o-mini",
+      messages: messages,
+      tools: [
+        {
+          type: "function",
+          function: {
+            function: checkFlights,
+            description: "Search for available flights between destinations",
+            parameters: zodToJsonSchema(FlightDetailsSchema),
+          },
+        },
+        {
+          type: "function",
+          function: {
+            function: searchHotels,
+            description: "Search for available hotels in a location",
+            parameters: zodToJsonSchema(HotelSearchSchema),
+          },
+        },
+      ],
     });
-
-    /**
-     * Chat models stream message chunks rather than bytes, so this
-     * output parser handles serialization and byte-encoding.
-     */
-    const outputParser = new HttpResponseOutputParser();
-
-    /**
-     * Can also initialize as:
-     *
-     * import { RunnableSequence } from "@langchain/core/runnables";
-     * const chain = RunnableSequence.from([prompt, model, outputParser]);
-     */
-    const chain = prompt.pipe(model).pipe(outputParser);
-
-    const stream = await chain.stream({
-      chat_history: formattedPreviousMessages.join("\n"),
-      input: currentMessageContent,
-    });
-
-    return new StreamingTextResponse(stream);
+    const response = await runner.finalContent();
+    return new NextResponse(response);
   } catch (e: any) {
+    console.error("Error:", e);
     return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
   }
 }
