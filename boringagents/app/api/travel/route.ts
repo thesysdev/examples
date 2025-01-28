@@ -3,37 +3,6 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import OpenAI from "openai";
 
-const formatMessage = (message: { role: string; content: string }) => {
-  return `${message.role}: ${message.content}`;
-};
-
-const TEMPLATE = `You are an experienced travel advisor who helps people plan their perfect trips. Your goal is to create personalized travel itineraries and recommendations.
-
-Please gather the following essential information if not already provided:
-- Destination preferences
-- Travel dates or season
-- Budget range
-- Number of travelers
-- Trip duration
-- Interests (e.g., culture, adventure, relaxation, food, etc.)
-- Accommodation preferences
-- Must-see attractions or experiences
-
-Guidelines:
-1. If any essential information is missing, ask for it politely
-2. When appropriate, use the tools to provide specific flight and hotel information
-3. Provide specific recommendations based on the user's preferences
-4. Consider practical aspects like weather, peak seasons, and local events
-5. Break down budget suggestions for accommodation, activities, and transportation
-6. Offer alternative options when relevant
-7. Include insider tips and local recommendations
-
-Current conversation:
-{chat_history}
-
-User: {input}
-AI:`;
-
 // Define Zod schemas
 const FlightDetailsSchema = z.object({
   from: z.string().describe("Departure city or airport code"),
@@ -57,6 +26,7 @@ type HotelSearch = z.infer<typeof HotelSearchSchema>;
 async function checkFlights(params: FlightDetails) {
   // Implement flight search logic here
   // This is a placeholder that you would replace with actual API calls
+  console.log("checkFlights", params);
   return {
     available: true,
     flights: [
@@ -65,6 +35,18 @@ async function checkFlights(params: FlightDetails) {
         price: "$500",
         departure: "10:00 AM",
         arrival: "2:00 PM",
+      },
+      {
+        airline: "Budget Airways",
+        price: "$425",
+        departure: "7:30 AM",
+        arrival: "11:45 AM",
+      },
+      {
+        airline: "Premium Air",
+        price: "$650",
+        departure: "1:15 PM",
+        arrival: "5:30 PM",
       },
     ],
   };
@@ -77,10 +59,22 @@ async function searchHotels(params: HotelSearch) {
     available: true,
     hotels: [
       {
-        name: "Sample Hotel",
+        name: "Luxury Grand Hotel",
+        price: "$300/night",
+        rating: 4.8,
+        amenities: ["WiFi", "Pool", "Spa", "Fine Dining", "Gym"],
+      },
+      {
+        name: "Comfort Inn & Suites",
         price: "$200/night",
         rating: 4.5,
-        amenities: ["WiFi", "Pool", "Breakfast"],
+        amenities: ["WiFi", "Pool", "Breakfast", "Parking"],
+      },
+      {
+        name: "Budget Stay Express",
+        price: "$120/night",
+        rating: 4.0,
+        amenities: ["WiFi", "Breakfast", "Parking"],
       },
     ],
   };
@@ -99,31 +93,54 @@ export async function POST(req: NextRequest) {
 
     const client = new OpenAI();
 
-    // @ts-ignore
-    const runner = client.beta.chat.completions.runTools({
-      model: "gpt-4o-mini",
-      messages: messages,
-      tools: [
-        {
-          type: "function",
-          function: {
-            function: checkFlights,
-            description: "Search for available flights between destinations",
-            parameters: zodToJsonSchema(FlightDetailsSchema),
-          },
-        },
-        {
-          type: "function",
-          function: {
-            function: searchHotels,
-            description: "Search for available hotels in a location",
-            parameters: zodToJsonSchema(HotelSearchSchema),
-          },
-        },
-      ],
+    const stream = new ReadableStream({
+      async start(controller) {
+        client.beta.chat.completions
+          // @ts-ignore
+          .runTools({
+            model: "gpt-4o-mini",
+            messages: messages,
+            stream: true,
+            tools: [
+              {
+                type: "function",
+                function: {
+                  function: checkFlights,
+                  description:
+                    "Search for available flights between destinations",
+                  parameters: zodToJsonSchema(FlightDetailsSchema),
+                  parse: (params: string) => {
+                    return FlightDetailsSchema.parse(JSON.parse(params));
+                  },
+                },
+              },
+              {
+                type: "function",
+                function: {
+                  function: searchHotels,
+                  description: "Search for available hotels in a location",
+                  parse: (params: string) => {
+                    return HotelSearchSchema.parse(JSON.parse(params));
+                  },
+                  parameters: zodToJsonSchema(HotelSearchSchema),
+                },
+              },
+            ],
+          })
+          .on("content", (delta) => {
+            controller.enqueue(delta);
+          })
+          .on("end", () => {
+            controller.close();
+          });
+      },
     });
-    const response = await runner.finalContent();
-    return new NextResponse(response);
+    return new NextResponse(stream, {
+      headers: {
+        "Content-Type": "text/plain",
+        "Transfer-Encoding": "chunked",
+      },
+    });
   } catch (e: any) {
     console.error("Error:", e);
     return NextResponse.json({ error: e.message }, { status: e.status ?? 500 });
