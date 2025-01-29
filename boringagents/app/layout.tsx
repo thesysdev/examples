@@ -71,8 +71,8 @@ export default function RootLayout({
               </a> */}
               <nav className="flex gap-1 flex-col md:flex-row">
                 <ActiveLink href="/">🏴 Travel</ActiveLink>
-                {/* <ActiveLink href="/fino"> Finance Assistant</ActiveLink>
-                <ActiveLink href="/agents">E-Commerce</ActiveLink> */}
+                {/* {/* <ActiveLink href="/fino"> Finance Assistant</ActiveLink> */}
+                <ActiveLink href="/ecommerce">E-Commerce</ActiveLink>
               </nav>
             </div>
 
