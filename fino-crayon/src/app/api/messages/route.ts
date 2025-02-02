@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
 import { deserializeMessage } from "@/types/message";
-import { Message } from "@crayonai/react-core";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export async function GET(request: Request) {
   try {
@@ -39,7 +39,9 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, ...messageData } = body as Message;
+    const { id, ...messageData } = body as ChatCompletionMessageParam & {
+      id: number;
+    };
 
     if (!id) {
       return NextResponse.json(
@@ -48,26 +50,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    const messageId = parseInt(id);
-    if (isNaN(messageId)) {
-      return NextResponse.json(
-        { error: "Invalid message ID" },
-        { status: 400 }
-      );
-    }
-
-    // Check if message exists
-    const existingMessage = await prisma.messages.findUnique({
-      where: { id: messageId },
-    });
-
-    if (!existingMessage) {
-      return NextResponse.json({ error: "Message not found" }, { status: 404 });
-    }
-
     // Update the message
     const updatedMessage = await prisma.messages.update({
-      where: { id: messageId },
+      where: { id },
       data: {
         message: JSON.stringify(messageData),
         updated_at: new Date(),

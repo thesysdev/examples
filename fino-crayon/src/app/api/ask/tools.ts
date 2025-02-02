@@ -1,18 +1,19 @@
 import { ChatCompletionTool } from "openai/resources/chat/completions";
 
 // Define available tools
-export const availableTools: ChatCompletionTool[] = [
+export const dataTools: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
       name: "execute_sql",
-      description: "Execute SQL queries on the transactions database.",
+      description: "Execute SQL lite queries on the Transaction table.",
       parameters: {
         type: "object",
         properties: {
           query: {
             type: "string",
-            description: "SQL query to execute",
+            description:
+              "SQL query to execute on the Transaction table. Use the Transaction table. quote the table name.",
           },
           description: {
             type: "string",
@@ -57,6 +58,8 @@ export const availableTools: ChatCompletionTool[] = [
 ];
 
 // Helper function to get a tool by name
-export function getToolByName(name: string): ChatCompletionTool | undefined {
-  return availableTools.find((tool) => tool.function.name === name);
+export function getDataToolByName(
+  name: string
+): ChatCompletionTool | undefined {
+  return dataTools.find((tool) => tool.function.name === name);
 }
