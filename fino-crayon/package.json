@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prepare": "prisma generate"
+    "prepare": "prisma generate && prisma db push"
   },
   "dependencies": {
     "@crayonai/react-core": "file:../../aisdk/frontend-sdk/packages/react-core",
