@@ -38,7 +38,7 @@ const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
     "Example response structure:\n" +
     '{"response": [\n' +
     '  "Let me analyze your expenses for you.",\n' +
-    '  {"name": "breakdown_expenses", "parameters": {...}},\n' +
+    '  {"name": "breakdown_expenses", "templateProps": {...}},\n' +
     '  "Based on this breakdown, your highest spending is in Food category. Consider setting a budget to reduce these expenses."\n' +
     "]}\n" +
     "Available templates and their uses:\n" +
@@ -131,7 +131,22 @@ const streamResponse = async (
   historicalMessages: ChatCompletionMessageParam[],
   threadId: number
 ) => {
-  let currentlyStreamedContent = "";
+  // structured streaming logic
+  // on "content" and on "end" are the 2 triggers that are used to stream data
+  // response_format: { response: (string | templateObject)[] }
+  //
+  // best effort parse previously streamed content and current streamed content
+  // 1. if the response array length is same for previous streamed content and current streamed content, then we assume text or template is still being streamed
+  //     case 1: the last item is a string, then we stream the delta of the string.
+  //     case 2: the last item is a template, then we ignore it for now, since it can be a partial template
+  // 2. if the response array length is changed:
+  //     case 1: the last item in the previous parsed content is a template, then we stream template part since it is complete
+  //     case 2: the last item in the currently parsed content is a string, then we stream that string.
+  // 3. when the stream ends, we parse the entire streamed content:
+  //     case 1: the last item in the parsed content is a template, then we stream that template
+  //     case 2: the last item in the parsed content is a string, then we ignore it since it is already streamed in step 1.
+
+  let streamedContent = "";
 
   const completion = openai.beta.chat.completions
     .runTools({
@@ -175,16 +190,21 @@ const streamResponse = async (
       },
     })
     .on("content", (content) => {
-      const previousParsed = parse(currentlyStreamedContent);
-      currentlyStreamedContent += content;
-      const parsed = parse(currentlyStreamedContent);
+      const previousParsed = parse(streamedContent);
+      streamedContent += content;
+      const parsed = parse(streamedContent);
 
       if (previousParsed.response && parsed.response) {
-        if (previousParsed.response.length < parsed.response.length) {
-          // we have a new item in the response array
-
-          // if the previous item was a template, we need to enqueue it
-          // we only enqueue templates if there is a clear indication of it being completed
+        if (previousParsed.response.length === parsed.response.length) {
+          const newContent = parsed.response.pop();
+          const lastContent = previousParsed.response.pop();
+          if (typeof newContent === "string") {
+            const textPart = newContent.substring(lastContent.length);
+            if (textPart.length > 0) {
+              controller.enqueue(encodeTextPartForSSE(textPart));
+            }
+          }
+        } else {
           const lastTemplate = previousParsed.response.pop();
           if (typeof lastTemplate === "object") {
             controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));
@@ -197,26 +217,15 @@ const streamResponse = async (
           }
 
           return;
-        } else {
-          const newContent = parsed.response.pop();
-          const lastContent = previousParsed.response.pop();
-          if (typeof newContent === "string") {
-            const textPart = newContent.substring(lastContent.length);
-            if (textPart.length > 0) {
-              controller.enqueue(encodeTextPartForSSE(textPart));
-            }
-          }
         }
       }
     })
     .on("end", async () => {
-      const parsed = parse(currentlyStreamedContent);
+      const parsed = parse(streamedContent);
       if (
         parsed.response &&
         typeof parsed.response[parsed.response.length - 1] === "object"
       ) {
-        // last template if not text then it won't have been streamed
-        // so we need to enqueue it now
         const lastTemplate = parsed.response.pop();
         controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));
       }

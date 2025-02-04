@@ -45,7 +45,7 @@ export const TemplatesJsonSchema = {
             description: template.description,
             properties: {
               name: { const: template.name },
-              parameters: zodToJsonSchema(template.parameters),
+              templateProps: zodToJsonSchema(template.parameters),
             },
             required: ["name", "parameters"],
             additionalProperties: false,
