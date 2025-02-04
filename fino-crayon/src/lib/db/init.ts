@@ -24,11 +24,13 @@ export async function initializeDb(prisma: PrismaClient) {
       "Bonus",
     ];
 
+    let balance = 0;
     // Generate transactions with approximately 5:1 ratio of debits to credits
     const transactions = Array.from({ length: 100 }, (_, i) => {
       const transactionType = i % 6 === 0 ? "credit" : "debit";
       const amount = Number((Math.random() * 490 + 10).toFixed(2)); // Random amount between 10 and 500, rounded to 2 decimal places
       const finalAmount = transactionType === "credit" ? amount : -amount;
+      balance += finalAmount;
 
       const category =
         transactionType === "credit"
@@ -42,8 +44,8 @@ export async function initializeDb(prisma: PrismaClient) {
 
       return {
         date,
-        amount,
-        balance: finalAmount,
+        amount: finalAmount,
+        balance,
         category,
         description: "Mock transaction",
         transaction_type: transactionType,

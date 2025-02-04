@@ -2,8 +2,9 @@ import { BreakdownExpensesSummarySchema } from "./breakdown-expenses";
 import { UserConsentSchema } from "./user-consent";
 import { TrendsSchema } from "./trends";
 import { Breakdown2DSchema } from "./breakdown-2d";
+import zodToJsonSchema from "zod-to-json-schema";
 
-export const tools = [
+export const templates = [
   {
     name: "breakdown_expenses",
     description: "Renders a summary of the user's financial situation.",
@@ -28,7 +29,32 @@ export const tools = [
   },
 ] as const;
 
-export type Tool = (typeof tools)[number];
+export const TemplatesJsonSchema = {
+  type: "object",
+  properties: {
+    response: {
+      type: "array",
+      items: {
+        oneOf: [
+          {
+            type: "string",
+            description: "text message to be displayed to the user",
+          },
+          ...templates.map((template) => ({
+            type: "object",
+            description: template.description,
+            properties: {
+              name: { const: template.name },
+              parameters: zodToJsonSchema(template.parameters),
+            },
+            required: ["name", "parameters"],
+            additionalProperties: false,
+          })),
+        ],
+      },
+    },
+  },
+} as const;
 
 // Re-export all schemas and types
 export * from "./breakdown-expenses";
