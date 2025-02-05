@@ -1,4 +1,6 @@
+import { Message } from "@crayonai/react-core";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import invariant from "tiny-invariant";
 
 export interface DBMessage {
   id: number;
@@ -27,4 +29,28 @@ export function deserializeMessage(
 
   const message = JSON.parse(dbMessage.message) as ChatCompletionMessageParam;
   return message;
+}
+
+export function toCrayonMessage(dbMessage: DBMessage): Message {
+  const message = deserializeMessage(dbMessage);
+
+  invariant(
+    message.role === "user" || message.role === "assistant",
+    "Invalid message role"
+  );
+
+  if (message.role === "user") {
+    return {
+      id: dbMessage.id.toString(),
+      role: "user",
+      type: "prompt",
+      message: message.content as string,
+    };
+  }
+
+  return {
+    id: dbMessage.id.toString(),
+    role: message.role,
+    message: JSON.parse(message.content as string).response,
+  };
 }

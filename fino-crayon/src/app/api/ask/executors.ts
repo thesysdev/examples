@@ -6,8 +6,7 @@ export const SQLArgsSchema = z.object({
     .string()
     .describe(
       "SQL query to execute on the Transaction table. Use the Transaction table. " +
-        "quote the table name. " +
-        "amounts should not be equal to 0 for calculations"
+        "quote the table name. "
     ),
   description: z
     .string()

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/db";
-import { deserializeMessage } from "@/types/message";
+import { toCrayonMessage } from "@/types/message";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 export async function GET(request: Request) {
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
-      messages: messages.map((msg) => deserializeMessage(msg)),
+      messages: messages.map((msg) => toCrayonMessage(msg)),
     });
   } catch (error) {
     console.error("Failed to fetch messages:", error);
@@ -59,7 +59,7 @@ export async function PUT(request: Request) {
       },
     });
 
-    return NextResponse.json(deserializeMessage(updatedMessage));
+    return NextResponse.json(toCrayonMessage(updatedMessage));
   } catch (error) {
     console.error("Failed to update message:", error);
     return NextResponse.json(

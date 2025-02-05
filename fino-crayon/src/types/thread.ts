@@ -35,5 +35,6 @@ export function deserializeThread(thread: Thread): CrayonThread {
     ...crayonThread,
     threadId: thread.id.toString(),
     title: thread.title,
+    createdAt: thread.created_at,
   };
 }

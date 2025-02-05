@@ -1,5 +1,4 @@
 import { z } from "zod";
-
 export const UserConsentSchema = z.object({
   explanation: z.string(),
 });

@@ -27,7 +27,7 @@ export const templates = [
       "Renders visualisation that helps user's understand theirfinancial data when breakdown is required by more than one dimension. For example, a breakdown of expenses by category and month.",
     parameters: Breakdown2DSchema,
   },
-] as const;
+];
 
 export const TemplatesJsonSchema = {
   type: "object",
@@ -55,9 +55,3 @@ export const TemplatesJsonSchema = {
     },
   },
 } as const;
-
-// Re-export all schemas and types
-export * from "./breakdown-expenses";
-export * from "./user-consent";
-export * from "./trends";
-export * from "./breakdown-2d";

@@ -22,6 +22,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+function escapeString(s: string) {
+  return s.replaceAll('"', '\\"').replaceAll("\n", "\\n");
+}
+
 const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
   role: "system",
   content:
@@ -34,11 +38,11 @@ const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
     "3. End with additional insights or recommendations as text string\n" +
     "You have access to tools to analyze transaction data and set budgets. " +
     "Use these tools when appropriate to provide data-driven insights. " +
-    "Always respond with a single JSON object containing a 'response' array. " +
+    "Always respond with a single JSON object containing a 'response' array which contains string or template object " +
     "Example response structure:\n" +
     '{"response": [\n' +
     '  "Let me analyze your expenses for you.",\n' +
-    '  {"name": "breakdown_expenses", "templateProps": {...}},\n' +
+    '  {"name": "breakdown_expenses", "templateProps": {...},\n' +
     '  "Based on this breakdown, your highest spending is in Food category. Consider setting a budget to reduce these expenses."\n' +
     "]}\n" +
     "Available templates and their uses:\n" +
@@ -57,26 +61,30 @@ export async function GET() {
 function mapCreateMessageToOpenAIMessage(
   message: CreateMessage
 ): ChatCompletionMessageParam {
-  return {
-    role: "user",
-    content: message.message || "",
-  };
+  if (message.role === "user" && typeof message.message === "string") {
+    return {
+      role: "user",
+      content: message.message,
+    };
+  }
+
+  throw new Error("Invalid message");
 }
 
 function encodeTextPartForSSE(text: string) {
-  return `0:${text}`;
+  return `0:${escapeString(text)}\n`;
 }
 
 function encodeResponseTemplateForSSE(template: object) {
-  return `1:${JSON.stringify(template)}`;
+  return `1:${escapeString(JSON.stringify(template))}\n`;
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { threadId, ...messageData } = body as CreateMessage & {
-      threadId: number;
-    };
+    const threadId = +body.threadId;
+    delete body.threadId;
+    const messageData = body;
 
     if (!threadId || isNaN(threadId)) {
       return NextResponse.json(
@@ -112,7 +120,7 @@ export async function POST(request: Request) {
     return new Response(stream, {
       headers: {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
       },
     });
@@ -160,7 +168,17 @@ const streamResponse = async (
           type: "function",
           function: {
             function: execute_sql,
-            description: "Execute SQL lite queries on the Transaction table.",
+            description:
+              "Execute SQL lite queries on the Transaction table. \n" +
+              `id              Int      @id @default(autoincrement())
+              date            DateTime
+              amount          Float
+              balance         Float
+              category        String
+              transaction_type "credit" | "debit"`
+                .split("\n")
+                .map((line) => line.trim())
+                .join("\n"),
             parameters: zodToJsonSchema(SQLArgsSchema) as object,
             parse: (params: string) => {
               return SQLArgsSchema.parse(JSON.parse(params));
@@ -221,6 +239,7 @@ const streamResponse = async (
       }
     })
     .on("end", async () => {
+      console.log("streamedContent", streamedContent);
       const parsed = parse(streamedContent);
       if (
         parsed.response &&
