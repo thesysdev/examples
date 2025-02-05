@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Transaction {
+  id              Int      @id @default(autoincrement())
+  date            DateTime
+  amount          Float
+  balance         Float
+  category        String
+  description     String?
+  transaction_type String
+  
+  @@index([id])
+}
+
+model Messages {
+  id          Int      @id @default(autoincrement())
+  threadId    Int
+  message     String   // Serialized message data from @crayonai/react-core
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  thread      Thread   @relation(fields: [threadId], references: [id])
+
+  @@index([id])
+  @@index([threadId])
+}
+
+model Thread {
+  id          Int      @id @default(autoincrement())
+  title       String
+  data        String   // Serialized CrayonThread data
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  status      String   @default("active") // 'active' | 'archived' | 'deleted'
+  messages    Messages[]
+  
+  @@index([id])
+  @@index([created_at])
+}
