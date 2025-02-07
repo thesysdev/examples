@@ -10,8 +10,8 @@
     "prepare": "prisma generate && prisma db push"
   },
   "dependencies": {
-    "@crayonai/react-core": "file:../../aisdk/frontend-sdk/packages/react-core",
-    "@crayonai/react-ui": "file:../../aisdk/frontend-sdk/packages/react-ui",
+    "@crayonai/react-core": "^0.5.0",
+    "@crayonai/react-ui": "^0.5.0",
     "@prisma/client": "^6.3.0",
     "best-effort-json-parser": "^1.1.2",
     "next": "15.1.6",
