@@ -12,7 +12,7 @@ import {
 } from "./executors";
 import { TemplatesJsonSchema } from "@/types/responseTemplates/templates";
 import zodToJsonSchema from "zod-to-json-schema";
-import { CrayonDataStreamTransformer } from "./util";
+import { fromOpenAICompletion } from "./util";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set in environment variables");
@@ -97,9 +97,7 @@ export async function POST(request: Request) {
       deserializeMessage(msg)
     );
 
-    // Create a new ReadableStream for SSE
     const stream = streamResponse(openAIUserMessage, messageHistory, threadId);
-
     // Return the stream with appropriate headers
     return new NextResponse(stream, {
       headers: {
@@ -208,7 +206,5 @@ const streamResponse = (
       data: messagesToStore.map((msg) => serializeMessage(msg, threadId)),
     });
   };
-  return completion
-    .toReadableStream()
-    .pipeThrough(new CrayonDataStreamTransformer({ onFinish: onFinish }));
+  return fromOpenAICompletion(completion, { onFinish });
 };
