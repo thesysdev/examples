@@ -38,10 +38,9 @@ const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
     "3. End with additional insights or recommendations as text string\n" +
     "You have access to tools to analyze transaction data and set budgets. " +
     "Use these tools when appropriate to provide data-driven insights. " +
-    "Always respond with a single JSON object containing a 'response' array which contains string or template object " +
+    "Always respond with a single JSON object containing a 'response' array which contains text or template object " +
     "Example response structure:\n" +
     '{"response": [\n' +
-    '  "Let me analyze your expenses for you.",\n' +
     '  {"name": "breakdown_expenses", "templateProps": {...},\n' +
     '  "Based on this breakdown, your highest spending is in Food category. Consider setting a budget to reduce these expenses."\n' +
     "]}\n" +
@@ -216,22 +215,28 @@ const streamResponse = async (
         if (previousParsed.response.length === parsed.response.length) {
           const newContent = parsed.response.pop();
           const lastContent = previousParsed.response.pop();
-          if (typeof newContent === "string") {
-            const textPart = newContent.substring(lastContent.length);
+          if (newContent.type === "text" && newContent.text) {
+
+            const textPart = newContent.text.substring(lastContent.text.length);
             if (textPart.length > 0) {
+              console.log("newContent", textPart);
+
               controller.enqueue(encodeTextPartForSSE(textPart));
             }
           }
         } else {
+
           const lastTemplate = previousParsed.response.pop();
-          if (typeof lastTemplate === "object") {
+          if (typeof lastTemplate === "object" && lastTemplate.type !== "text") {
+            console.log("lastTemplate in else", lastTemplate);
             controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));
           }
 
           const newContent = parsed.response.pop();
 
-          if (typeof newContent === "string") {
-            controller.enqueue(encodeTextPartForSSE(newContent));
+          if (newContent.type === "text" && newContent.text) {
+            console.log("newContent in else", newContent);
+            controller.enqueue(encodeTextPartForSSE(newContent.text));
           }
 
           return;
@@ -243,7 +248,7 @@ const streamResponse = async (
       const parsed = parse(streamedContent);
       if (
         parsed.response &&
-        typeof parsed.response[parsed.response.length - 1] === "object"
+        parsed.response[parsed.response.length - 1].type !== "text"
       ) {
         const lastTemplate = parsed.response.pop();
         controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));

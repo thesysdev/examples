@@ -10,8 +10,8 @@
     "prepare": "prisma generate && prisma db push"
   },
   "dependencies": {
-    "@crayonai/react-core": "file:../../aisdk/frontend-sdk/packages/react-core",
-    "@crayonai/react-ui": "file:../../aisdk/frontend-sdk/packages/react-ui",
+    "@crayonai/react-core": "file:../../aisdk/js/packages/react-core",
+    "@crayonai/react-ui": "file:../../aisdk/js/packages/react-ui",
     "@prisma/client": "^6.3.0",
     "best-effort-json-parser": "^1.1.2",
     "next": "15.1.6",
@@ -28,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "daisyui": "^4.12.23",
     "eslint": "^9",
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
