@@ -2,6 +2,7 @@
 import { templates } from "../responseTemplates/templates";
 import { CrayonChat } from "@crayonai/react-ui";
 const logoUrl = "/thesysdev_logo.jpeg";
+import "@crayonai/react-ui/styles/index.css";
 
 const Index = () => {
   return (
