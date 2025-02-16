@@ -1,12 +1,8 @@
 "use client";
 import { templates } from "../responseTemplates/templates";
-import "@crayonai/react-ui/styles/shell.css";
-import "@crayonai/react-ui/styles/button.css";
-import "@crayonai/react-ui/styles/iconButton.css";
-import "@crayonai/react-ui/styles/charts.css";
-import "@crayonai/react-ui/styles/card.css";
 import { CrayonChat } from "@crayonai/react-ui";
 const logoUrl = "/thesysdev_logo.jpeg";
+import "@crayonai/react-ui/styles/index.css";
 
 const Index = () => {
   return (

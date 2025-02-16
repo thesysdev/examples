@@ -33,10 +33,9 @@ const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
     "3. End with additional insights or recommendations as text string\n" +
     "You have access to tools to analyze transaction data and set budgets. " +
     "Use these tools when appropriate to provide data-driven insights. " +
-    "Always respond with a single JSON object containing a 'response' array which contains string or template object " +
+    "Always respond with a single JSON object containing a 'response' array which contains text or template object " +
     "Example response structure:\n" +
     '{"response": [\n' +
-    '  "Let me analyze your expenses for you.",\n' +
     '  {"name": "breakdown_expenses", "templateProps": {...},\n' +
     '  "Based on this breakdown, your highest spending is in Food category. Consider setting a budget to reduce these expenses."\n' +
     "]}\n" +

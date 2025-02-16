@@ -37,17 +37,26 @@ export const TemplatesJsonSchema = {
       items: {
         oneOf: [
           {
-            type: "string",
-            description: "text message to be displayed to the user",
+            type: "object",
+            properties: {
+              type: { const: "text" },
+              text: {
+                type: "string",
+                description: "text message to be displayed to the user",
+              },
+            },
+            required: ["type", "text"],
+            additionalProperties: false,
           },
           ...templates.map((template) => ({
             type: "object",
             description: template.description,
             properties: {
+              type: { const: "template" },
               name: { const: template.name },
               templateProps: zodToJsonSchema(template.parameters),
             },
-            required: ["name", "parameters"],
+            required: ["name", "templateProps", "type"],
             additionalProperties: false,
           })),
         ],
