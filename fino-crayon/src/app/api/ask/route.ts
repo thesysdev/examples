@@ -12,7 +12,7 @@ import {
 } from "./executors";
 import { TemplatesJsonSchema } from "@/types/responseTemplates/templates";
 import zodToJsonSchema from "zod-to-json-schema";
-import { parse } from "best-effort-json-parser";
+import { fromOpenAICompletion } from "./util";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set in environment variables");
@@ -21,11 +21,6 @@ if (!process.env.OPENAI_API_KEY) {
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-function escapeString(s: string) {
-  return s.replaceAll('"', '\\"').replaceAll("\n", "\\n");
-}
-
 const SYSTEM_MESSAGE: ChatCompletionMessageParam = {
   role: "system",
   content:
@@ -70,14 +65,6 @@ function mapCreateMessageToOpenAIMessage(
   throw new Error("Invalid message");
 }
 
-function encodeTextPartForSSE(text: string) {
-  return `0:${escapeString(text)}\n`;
-}
-
-function encodeResponseTemplateForSSE(template: object) {
-  return `1:${escapeString(JSON.stringify(template))}\n`;
-}
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -109,14 +96,9 @@ export async function POST(request: Request) {
       deserializeMessage(msg)
     );
 
-    // Create a new ReadableStream for SSE
-    const stream = new ReadableStream({
-      start: (controller) =>
-        streamResponse(controller, openAIUserMessage, messageHistory, threadId),
-    });
-
+    const stream = streamResponse(openAIUserMessage, messageHistory, threadId);
     // Return the stream with appropriate headers
-    return new Response(stream, {
+    return new NextResponse(stream, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache, no-transform",
@@ -132,8 +114,7 @@ export async function POST(request: Request) {
   }
 }
 
-const streamResponse = async (
-  controller: ReadableStreamDefaultController,
+const streamResponse = (
   userMessage: ChatCompletionMessageParam,
   historicalMessages: ChatCompletionMessageParam[],
   threadId: number
@@ -153,132 +134,76 @@ const streamResponse = async (
   //     case 1: the last item in the parsed content is a template, then we stream that template
   //     case 2: the last item in the parsed content is a string, then we ignore it since it is already streamed in step 1.
 
-  let streamedContent = "";
-
-  const completion = openai.beta.chat.completions
-    .runTools({
-      model: "gpt-4o",
-      messages: [SYSTEM_MESSAGE, ...historicalMessages, userMessage],
-      temperature: 0.5,
-      max_tokens: 1000,
-      stream: true,
-      tools: [
-        {
-          type: "function",
-          function: {
-            function: execute_sql,
-            description:
-              "Execute SQL lite queries on the Transaction table. \n" +
-              `id              Int      @id @default(autoincrement())
+  const completion = openai.beta.chat.completions.runTools({
+    model: "gpt-4o",
+    messages: [SYSTEM_MESSAGE, ...historicalMessages, userMessage],
+    temperature: 0.5,
+    max_tokens: 1000,
+    stream: true,
+    tools: [
+      {
+        type: "function",
+        function: {
+          function: execute_sql,
+          description:
+            "Execute SQL lite queries on the Transaction table. \n" +
+            `id              Int      @id @default(autoincrement())
               date            DateTime
               amount          Float
               balance         Float
               category        String
               transaction_type "credit" | "debit"`
-                .split("\n")
-                .map((line) => line.trim())
-                .join("\n"),
-            parameters: zodToJsonSchema(SQLArgsSchema) as object,
-            parse: (params: string) => {
-              return SQLArgsSchema.parse(JSON.parse(params));
-            },
-            strict: true,
+              .split("\n")
+              .map((line) => line.trim())
+              .join("\n"),
+          parameters: zodToJsonSchema(SQLArgsSchema) as object,
+          parse: (params: string) => {
+            return SQLArgsSchema.parse(JSON.parse(params));
           },
-        },
-        {
-          type: "function",
-          function: {
-            function: set_budget,
-            description: "Set a budget for a category.",
-            parameters: zodToJsonSchema(BudgetArgsSchema) as object,
-            parse: (params: string) => {
-              return BudgetArgsSchema.parse(JSON.parse(params));
-            },
-            strict: true,
-          },
-        },
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "json_schema",
-          schema: TemplatesJsonSchema,
+          strict: true,
         },
       },
-    })
-    .on("content", (content) => {
-      const previousParsed = parse(streamedContent);
-      streamedContent += content;
-      const parsed = parse(streamedContent);
+      {
+        type: "function",
+        function: {
+          function: set_budget,
+          description: "Set a budget for a category.",
+          parameters: zodToJsonSchema(BudgetArgsSchema) as object,
+          parse: (params: string) => {
+            return BudgetArgsSchema.parse(JSON.parse(params));
+          },
+          strict: true,
+        },
+      },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "json_schema",
+        schema: TemplatesJsonSchema,
+      },
+    },
+  });
 
-      if (previousParsed.response && parsed.response) {
-        if (previousParsed.response.length === parsed.response.length) {
-          const newContent = parsed.response.pop();
-          const lastContent = previousParsed.response.pop();
-          if (newContent.type === "text" && newContent.text) {
-
-            const textPart = newContent.text.substring(lastContent.text.length);
-            if (textPart.length > 0) {
-              console.log("newContent", textPart);
-
-              controller.enqueue(encodeTextPartForSSE(textPart));
-            }
-          }
-        } else {
-
-          const lastTemplate = previousParsed.response.pop();
-          if (typeof lastTemplate === "object" && lastTemplate.type !== "text") {
-            console.log("lastTemplate in else", lastTemplate);
-            controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));
-          }
-
-          const newContent = parsed.response.pop();
-
-          if (newContent.type === "text" && newContent.text) {
-            console.log("newContent in else", newContent);
-            controller.enqueue(encodeTextPartForSSE(newContent.text));
+  const onFinish = async () => {
+    const result = completion
+      .allChatCompletions()
+      .flatMap((c) => {
+        return c.choices.map((c) => {
+          if (!c.message.tool_calls?.length) {
+            delete c.message.tool_calls;
           }
 
-          return;
-        }
-      }
-    })
-    .on("end", async () => {
-      console.log("streamedContent", streamedContent);
-      const parsed = parse(streamedContent);
-      if (
-        parsed.response &&
-        parsed.response[parsed.response.length - 1].type !== "text"
-      ) {
-        const lastTemplate = parsed.response.pop();
-        controller.enqueue(encodeResponseTemplateForSSE(lastTemplate));
-      }
-      // store messages when the stream ends
-      const result = (await completion.allChatCompletions())
-        .flatMap((c) => {
-          return c.choices.map((c) => {
-            if (!c.message.tool_calls?.length) {
-              delete c.message.tool_calls;
-            }
-
-            return c.message;
-          });
-        })
-        .filter((message) => {
-          if (message.tool_calls?.length) {
-            console.log(JSON.stringify(message.tool_calls, null, 2));
-          }
-          // filter out messages which have tool calls
-          // tool calls are not required to be stored
-          return !message.tool_calls;
+          return c.message;
         });
+      })
+      .filter((message) => !message.tool_calls);
 
-      const messagesToStore = [userMessage, ...result];
+    const messagesToStore = [userMessage, ...result];
 
-      await prisma.messages.createMany({
-        data: messagesToStore.map((msg) => serializeMessage(msg, threadId)),
-      });
-
-      controller.close();
+    await prisma.messages.createMany({
+      data: messagesToStore.map((msg) => serializeMessage(msg, threadId)),
     });
+  };
+  return fromOpenAICompletion(completion, { onFinish });
 };
