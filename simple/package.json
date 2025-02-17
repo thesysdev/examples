@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@crayonai/react-core": "^0.5.0",
-    "@crayonai/react-ui": "^0.5.0",
+    "@crayonai/react-ui": "file:../../crayon/js/packages/react-ui",
     "@crayonai/stream": "file:../../crayon/js/packages/stream",
     "next": "15.1.6",
     "openai": "^4.83.0",

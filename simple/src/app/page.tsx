@@ -26,11 +26,5 @@ const processMessage = async ({
 };
 
 export default function Home() {
-  return (
-    <CrayonChat
-      agentName="Crayon"
-      logoUrl="https://crayonai.org/img/logo.png"
-      processMessage={processMessage}
-    />
-  );
+  return <CrayonChat processMessage={processMessage} />;
 }

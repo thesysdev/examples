@@ -4,7 +4,7 @@ import { fromOpenAICompletion } from "@crayonai/stream";
 import { CreateMessage } from "@crayonai/react-core";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-export const TemplatesJsonSchema = {
+const TemplatesJsonSchema = {
   type: "object",
   properties: {
     response: {
@@ -12,8 +12,16 @@ export const TemplatesJsonSchema = {
       items: {
         oneOf: [
           {
-            type: "string",
-            description: "text message to be displayed to the user",
+            type: "object",
+            properties: {
+              type: { const: "text" },
+              text: {
+                type: "string",
+                description: "text message to be displayed to the user",
+              },
+            },
+            required: ["type", "text"],
+            additionalProperties: false,
           },
         ],
       },
