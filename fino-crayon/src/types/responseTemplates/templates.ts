@@ -3,6 +3,7 @@ import { UserConsentSchema } from "./user-consent";
 import { TrendsSchema } from "./trends";
 import { Breakdown2DSchema } from "./breakdown-2d";
 import zodToJsonSchema from "zod-to-json-schema";
+import { TextResponseSchema } from "@crayonai/stream";
 
 export const templates = [
   {
@@ -36,18 +37,7 @@ export const TemplatesJsonSchema = {
       type: "array",
       items: {
         oneOf: [
-          {
-            type: "object",
-            properties: {
-              type: { const: "text" },
-              text: {
-                type: "string",
-                description: "text message to be displayed to the user",
-              },
-            },
-            required: ["type", "text"],
-            additionalProperties: false,
-          },
+          TextResponseSchema,
           ...templates.map((template) => ({
             type: "object",
             description: template.description,

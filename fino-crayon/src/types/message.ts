@@ -48,9 +48,10 @@ export function toCrayonMessage(dbMessage: DBMessage): Message {
     };
   }
 
+  const msg = JSON.parse(message.content as string).response;
   return {
     id: dbMessage.id.toString(),
     role: message.role,
-    message: JSON.parse(message.content as string).response,
+    message: msg.type === "text" ? msg.text : msg,
   };
 }

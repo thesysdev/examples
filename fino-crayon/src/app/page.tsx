@@ -104,8 +104,6 @@ const Index = () => {
     responseTemplates: templates,
   });
 
-  console.log(threadListManager.shouldResetThreadState);
-
   return (
     <ThemeProvider>
       <ChatProvider
