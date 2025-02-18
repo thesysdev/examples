@@ -1,21 +1,21 @@
 "use client";
 
-import type { CreateMessage } from "@crayonai/react-core";
+import type { Message } from "@crayonai/react-core";
 import { CrayonChat } from "@crayonai/react-ui";
 import "@crayonai/react-ui/styles/index.css";
 
 const processMessage = async ({
   threadId,
-  message,
+  messages,
   abortController,
 }: {
   threadId: string;
-  message: CreateMessage;
+  messages: Message[];
   abortController: AbortController;
 }) => {
   const response = await fetch("/api/chat", {
     method: "POST",
-    body: JSON.stringify({ threadId, message }),
+    body: JSON.stringify({ threadId, messages }),
     headers: {
       "Content-Type": "application/json",
       Accept: "text/event-stream",

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { fromOpenAICompletion, TextResponseSchema } from "@crayonai/stream";
-import { CreateMessage } from "@crayonai/react-core";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import {
+  fromOpenAICompletion,
+  TextResponseSchema,
+  toOpenAIMessages,
+} from "@crayonai/stream";
+import { Message } from "@crayonai/react-core";
 
 const TemplatesJsonSchema = {
   type: "object",
@@ -16,21 +19,12 @@ const TemplatesJsonSchema = {
   },
 } as const;
 
-function mapCreateMessageToOpenAIMessage(
-  message: CreateMessage
-): ChatCompletionMessageParam {
-  return {
-    role: "user",
-    content: message.message,
-  };
-}
-
 export async function POST(req: NextRequest) {
-  const { message } = await req.json();
+  const { messages } = (await req.json()) as { messages: Message[] };
   const client = new OpenAI();
   const llmStream = await client.chat.completions.create({
     model: "gpt-4o",
-    messages: [mapCreateMessageToOpenAIMessage(message)],
+    messages: toOpenAIMessages(messages),
     stream: true,
     response_format: {
       type: "json_schema",
