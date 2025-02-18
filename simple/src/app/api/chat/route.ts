@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { fromOpenAICompletion } from "@crayonai/stream";
+import { fromOpenAICompletion, TextResponseSchema } from "@crayonai/stream";
 import { CreateMessage } from "@crayonai/react-core";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
@@ -10,20 +10,7 @@ const TemplatesJsonSchema = {
     response: {
       type: "array",
       items: {
-        oneOf: [
-          {
-            type: "object",
-            properties: {
-              type: { const: "text" },
-              text: {
-                type: "string",
-                description: "text message to be displayed to the user",
-              },
-            },
-            required: ["type", "text"],
-            additionalProperties: false,
-          },
-        ],
+        oneOf: [TextResponseSchema],
       },
     },
   },
