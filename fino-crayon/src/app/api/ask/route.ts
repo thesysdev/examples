@@ -12,7 +12,7 @@ import {
 } from "./executors";
 import { TemplatesJsonSchema } from "@/types/responseTemplates/templates";
 import zodToJsonSchema from "zod-to-json-schema";
-import { fromOpenAICompletion } from "./util";
+import { fromOpenAICompletion } from "@crayonai/stream";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY is not set in environment variables");
@@ -98,6 +98,7 @@ export async function POST(request: Request) {
 
     const stream = streamResponse(openAIUserMessage, messageHistory, threadId);
     // Return the stream with appropriate headers
+    // @ts-expect-error foo
     return new NextResponse(stream, {
       headers: {
         "Content-Type": "text/event-stream",

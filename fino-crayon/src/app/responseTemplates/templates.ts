@@ -3,6 +3,7 @@ import { Breakdown2DViz } from "./breakdown-2d";
 import { BreakdownExpenses } from "./breakdown-expenses";
 import { TrendsExpenses } from "./trends";
 import { UserConsent } from "./user-consent";
+import Markdown from "react-markdown";
 
 export const templates = [
   {
@@ -20,5 +21,9 @@ export const templates = [
   {
     name: "user_consent",
     Component: UserConsent,
+  },
+  {
+    name: "text",
+    Component: Markdown,
   },
 ] as ResponseTemplate[];
