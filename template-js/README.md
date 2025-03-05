@@ -1,6 +1,6 @@
-# Crayon Template Example (TypeScript)
+# Crayon Template Example (JavaScript)
 
-This is a TypeScript template demonstrating how to use the Crayon repository with Next.js.
+This is a JavaScript template demonstrating how to use the Crayon repository with Next.js.
 
 ## Prerequisites
 
@@ -33,10 +33,10 @@ pnpm dev
 
 - `src/` - Contains the source code
   - `app/` - Next.js app directory with pages and layouts
-    - `api/route.ts` - API endpoint for Crayon integration
+    - `api/route.js` - API endpoint for Crayon integration
 - `public/` - Static assets
-- `tailwind.config.ts` - Tailwind CSS configuration
-- `next.config.ts` - Next.js configuration
+- `tailwind.config.js` - Tailwind CSS configuration
+- `next.config.mjs` - Next.js configuration
 
 ## Available Scripts
 
@@ -49,6 +49,6 @@ pnpm dev
 
 - Next.js
 - React
-- TypeScript
+- JavaScript
 - Tailwind CSS
 - Crayon
