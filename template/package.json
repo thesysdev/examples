@@ -1,5 +1,5 @@
 {
-  "name": "simple",
+  "name": "template",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@crayonai/react-core": "^0.5.0",
-    "@crayonai/react-ui": "file:../../crayon/js/packages/react-ui",
-    "@crayonai/stream": "file:../../crayon/js/packages/stream",
+    "@crayonai/react-core": "latest",
+    "@crayonai/react-ui": "latest",
+    "@crayonai/stream": "latest",
     "next": "15.1.6",
     "openai": "^4.83.0",
     "react": "^19.0.0",
