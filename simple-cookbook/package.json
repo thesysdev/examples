@@ -17,6 +17,7 @@
     "openai": "^4.83.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "zod": "^3.24.2",
     "zod-to-json-schema": "^3.24.3"
   },

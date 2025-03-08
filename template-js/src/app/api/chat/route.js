@@ -2,21 +2,9 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import {
   fromOpenAICompletion,
-  TextResponseSchema,
   toOpenAIMessages,
+  templatesToResponseFormat,
 } from "@crayonai/stream";
-
-const TemplatesJsonSchema = {
-  type: "object",
-  properties: {
-    response: {
-      type: "array",
-      items: {
-        oneOf: [TextResponseSchema],
-      },
-    },
-  },
-};
 
 export async function POST(req) {
   const { messages } = await req.json();
@@ -25,13 +13,7 @@ export async function POST(req) {
     model: "gpt-4o",
     messages: toOpenAIMessages(messages),
     stream: true,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "json_schema",
-        schema: TemplatesJsonSchema,
-      },
-    },
+    response_format: templatesToResponseFormat(),
   });
   const responseStream = fromOpenAICompletion(llmStream);
   return new NextResponse(responseStream, {

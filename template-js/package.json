@@ -11,7 +11,7 @@
   "dependencies": {
     "@crayonai/react-core": "latest",
     "@crayonai/react-ui": "latest",
-    "@crayonai/stream": "latest",
+    "@crayonai/stream": "^0.5.1",
     "next": "14.1.0",
     "openai": "^4.28.0",
     "react": "^18.2.0",
