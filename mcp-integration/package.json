@@ -1,5 +1,5 @@
 {
-  "name": "simple-cookbook",
+  "name": "mcp-integration",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,27 +9,27 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@crayonai/react-core": "^0.6.0",
     "@crayonai/react-ui": "^0.6.0",
     "@crayonai/stream": "^0.6.0",
-    "lucide-react": "^0.477.0",
+    "@modelcontextprotocol/sdk": "^1.7.0",
+    "lucide-react": "^0.482.0",
     "next": "15.1.6",
-    "openai": "^4.83.0",
+    "openai": "^4.87.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-markdown": "^10.1.0",
-    "zod": "^3.24.2",
-    "zod-to-json-schema": "^3.24.3"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
+    "@eslint/eslintrc": "^3.3.0",
+    "@types/node": "^20.17.24",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "eslint": "^9.22.0",
     "eslint-config-next": "15.1.6",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2"
   }
 }
