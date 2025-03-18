@@ -117,13 +117,8 @@ export class MCPClient {
         .stream({
           model: "claude-3-5-sonnet-latest",
           max_tokens: 1000,
-          messages: [
-            {
-              role: "assistant",
-              content: SYSTEM_PROMPT,
-            },
-            ...messages,
-          ],
+          system: SYSTEM_PROMPT,
+          messages: messages,
           tools: this.tools,
         })
         .on("text", onText)

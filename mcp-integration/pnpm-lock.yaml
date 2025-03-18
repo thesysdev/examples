@@ -12,14 +12,14 @@ importers:
         specifier: ^0.39.0
         version: 0.39.0
       '@crayonai/react-core':
-        specifier: ^0.6.0
-        version: 0.6.0(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
+        specifier: ^0.6.1
+        version: 0.6.1(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
       '@crayonai/react-ui':
-        specifier: ^0.6.0
-        version: 0.6.0(@crayonai/react-core@0.6.0(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))))(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(storybook@8.5.5)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tailwindcss@3.4.17)(tiny-invariant@1.3.3)(webpack@5.98.0(esbuild@0.24.2))(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
+        specifier: ^0.6.2
+        version: 0.6.2(@crayonai/react-core@0.6.1(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))))(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(storybook@8.5.5)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tailwindcss@3.4.17)(tiny-invariant@1.3.3)(webpack@5.98.0(esbuild@0.24.2))(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
       '@crayonai/stream':
-        specifier: ^0.6.0
-        version: 0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
+        specifier: ^0.6.1
+        version: 0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
@@ -117,10 +117,10 @@ packages:
     resolution: {integrity: sha512-2WJMeRQPHKSPemqk/awGrAiuFfzBmOIPXKizAsVhWH9YJqLZ0H+HS4c8loHGgW6utJ3E/ejXQUsiGaQy2NZ9Fw==}
     engines: {node: '>=6.9.0'}
 
-  '@crayonai/react-core@0.6.0':
-    resolution: {integrity: sha512-WbFyzykrhI6rIpxYYF7jYsqXScaufknS/QHwr0hZtycra8EO4773IajlBPWCHdrCTSsgDtdZ8sop153RchytwQ==}
+  '@crayonai/react-core@0.6.1':
+    resolution: {integrity: sha512-tAKzK4q82fhvORY4QdNB0wfm8XZk1ulKfcPVtnoNppiTlW9vMfdll+0u7n/8kePTmrdCBTTPj92oSEvCo+xryw==}
     peerDependencies:
-      '@crayonai/stream': 0.6.0
+      '@crayonai/stream': 0.6.1
       ai: ^4.0.3
       eventsource-parser: ^3.0.0
       react: '>=18.0.0'
@@ -130,11 +130,11 @@ packages:
       tiny-invariant: ^1.3.3
       zustand: ^5.0.2
 
-  '@crayonai/react-ui@0.6.0':
-    resolution: {integrity: sha512-evOIrH5HhT595sWWA66GhHUjJTYl5YskvkQKuSNFU9ptieU4lG1YbpF4Po/9Aw1nULNGY7OJLKSst96KmJJuoA==}
+  '@crayonai/react-ui@0.6.2':
+    resolution: {integrity: sha512-pC/Rtc6iJh8O3IkU7kmqm/3sU0+JPWJuwweBbykmUPGcbNaudfclisaYY0vvOFtgjByyrBBWba+WSaIVFk6cbQ==}
     peerDependencies:
-      '@crayonai/react-core': 0.6.0
-      '@crayonai/stream': 0.6.0
+      '@crayonai/react-core': 0.6.1
+      '@crayonai/stream': 0.6.1
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
       tailwind-merge: ^2.5.4
@@ -143,8 +143,8 @@ packages:
       tiny-invariant: ^1.3.3
       zustand: ^5.0.2
 
-  '@crayonai/stream@0.6.0':
-    resolution: {integrity: sha512-X6a1LpLKru++xu0C3Xdy8VEkVWp8qeiHuVwdtaZzTS/v01OZaSj/kyYi9xwnjomzh6+L2sxrL9p+MdXOtAeMXw==}
+  '@crayonai/stream@0.6.1':
+    resolution: {integrity: sha512-BpgqBX0zfntdP+GDZa8zeKGHLYuJm9At9h+CmrgrV8ojJaE+BvX3zPbM4FK8PKh1jJaSfN5vjTFUsOtGYXEfIw==}
     peerDependencies:
       zod: ^3.24.1
       zod-to-json-schema: ^3.24.3
@@ -3476,9 +3476,9 @@ snapshots:
     dependencies:
       regenerator-runtime: 0.14.1
 
-  '@crayonai/react-core@0.6.0(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))':
+  '@crayonai/react-core@0.6.1(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))':
     dependencies:
-      '@crayonai/stream': 0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
+      '@crayonai/stream': 0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
       ai: 4.1.38(react@19.0.0)(zod@3.24.2)
       eventsource-parser: 3.0.0
       react: 19.0.0
@@ -3489,10 +3489,10 @@ snapshots:
       zod: 3.24.2
       zustand: 5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
 
-  '@crayonai/react-ui@0.6.0(@crayonai/react-core@0.6.0(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))))(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(storybook@8.5.5)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tailwindcss@3.4.17)(tiny-invariant@1.3.3)(webpack@5.98.0(esbuild@0.24.2))(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))':
+  '@crayonai/react-ui@0.6.2(@crayonai/react-core@0.6.1(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))))(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(storybook@8.5.5)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tailwindcss@3.4.17)(tiny-invariant@1.3.3)(webpack@5.98.0(esbuild@0.24.2))(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))':
     dependencies:
-      '@crayonai/react-core': 0.6.0(@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
-      '@crayonai/stream': 0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
+      '@crayonai/react-core': 0.6.1(@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2))(ai@4.1.38(react@19.0.0)(zod@3.24.2))(eventsource-parser@3.0.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(tailwind-merge@2.6.0)(tailwindcss-animate@1.0.7(tailwindcss@3.4.17))(tiny-invariant@1.3.3)(zustand@5.0.3(@types/react@19.0.10)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0)))
+      '@crayonai/stream': 0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)
       '@floating-ui/react-dom': 2.1.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@radix-ui/react-accordion': 1.2.3(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@radix-ui/react-aspect-ratio': 1.1.2(@types/react-dom@19.0.4(@types/react@19.0.10))(@types/react@19.0.10)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -3527,7 +3527,7 @@ snapshots:
       - storybook
       - webpack
 
-  '@crayonai/stream@0.6.0(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)':
+  '@crayonai/stream@0.6.1(zod-to-json-schema@3.24.1(zod@3.24.2))(zod@3.24.2)':
     dependencies:
       best-effort-json-parser: 1.1.3
       eventsource-encoder: 1.0.1
