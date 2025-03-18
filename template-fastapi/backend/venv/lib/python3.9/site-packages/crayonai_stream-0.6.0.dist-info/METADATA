@@ -1,0 +1,74 @@
+Metadata-Version: 2.1
+Name: crayonai_stream
+Version: 0.6.0
+Summary: Streaming utilities for CrayonAI
+License: MIT
+Author: Thesys Inc.
+Author-email: engineering@thesys.dev
+Requires-Python: >=3.9
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Dist: pydantic (>=2.0.0)
+Requires-Dist: types-setuptools (>=76.0.0.20250313,<77.0.0.0)
+Requires-Dist: typing-extensions (>=4.0.0)
+Description-Content-Type: text/markdown
+
+# CrayonAI Stream
+
+Python package for JSON Schema helpers and streaming utilities used in CrayonAI applications.
+
+## Installation
+
+```bash
+pip install crayonai_stream
+```
+
+## Usage
+
+### JSON Schema Helpers
+
+Convert Pydantic models to template schemas:
+
+```python
+from crayonai_stream import pydantic_to_template_schema
+from pydantic import BaseModel
+
+class MyTemplate(BaseModel):
+    name: str
+    value: int
+
+schema = pydantic_to_template_schema(MyTemplate, "my_template", "A sample template")
+```
+
+Create response formats with multiple templates:
+
+```python
+from crayonai_stream import templates_to_response_format, TemplateDefinition
+
+response_format = templates_to_response_format(
+    TemplateDefinition(
+        schema=MyTemplate,
+        name="my_template",
+        description="A sample template"
+    )
+)
+```
+
+## Development
+
+Install development dependencies:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Run all checks (useful for CI):
+
+```bash
+make ci
+```
+
