@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -10,19 +11,23 @@ from openai import OpenAI
 from dotenv import load_dotenv  # type: ignore
 
 from crayonai_stream import (
-    crayon_stream,
     CrayonMessage,
     templates_to_response_format,
     Error,
-    toOpenAIMessage,
     TemplateDefinition,
+    # setup_logging,
 )
-
+from crayonai_stream.integrations.openai import (
+    openai_crayon_stream,
+    toOpenAIMessage,
+)
 
 load_dotenv()
 
 app = FastAPI()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# setup_logging(logging.DEBUG)
 
 
 @app.get("/")
@@ -65,10 +70,9 @@ async def generate_stream(messages: List[CrayonMessage]) -> AsyncIterator[str]:
             response_format=response_format,
             stream=True,
         )
-        for chunk in crayon_stream(stream):
+        for chunk in openai_crayon_stream(stream):
             yield chunk
     except Exception as e:
-        print(e)
         yield Error(error=str(e)).toSSEString()
 
 
