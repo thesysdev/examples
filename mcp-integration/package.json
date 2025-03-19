@@ -10,13 +10,12 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@crayonai/react-core": "^0.6.1",
-    "@crayonai/react-ui": "^0.6.2",
-    "@crayonai/stream": "^0.6.1",
+    "@crayonai/react-core": "latest",
+    "@crayonai/react-ui": "latest",
+    "@crayonai/stream": "latest",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "lucide-react": "^0.482.0",
     "next": "15.1.6",
-    "openai": "^4.87.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.2"
@@ -24,7 +23,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@types/node": "^20.17.24",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.0.11",
     "@types/react-dom": "^19.0.4",
     "eslint": "^9.22.0",
     "eslint-config-next": "15.1.6",
