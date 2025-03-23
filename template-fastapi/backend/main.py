@@ -73,6 +73,7 @@ async def generate_stream(messages: List[CrayonMessage]) -> AsyncIterator[str]:
         for chunk in openai_crayon_stream(stream):
             yield chunk
     except Exception as e:
+        logging.error(e)
         yield Error(error=str(e)).toSSEString()
 
 
