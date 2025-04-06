@@ -5,6 +5,7 @@ This is a TypeScript template demonstrating how to use the Crayon repository wit
 ## Queries to try
 
 - "I want to subscribe to your newsletter" (Simple one step form)
+- "I want to apply to a job" (Multi step form)
 
 ## Prerequisites
 

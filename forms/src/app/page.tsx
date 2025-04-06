@@ -4,11 +4,25 @@ import type { Message, ResponseTemplate } from "@crayonai/react-core";
 import { CrayonChat } from "@crayonai/react-ui";
 import "@crayonai/react-ui/styles/index.css";
 import { SimpleForm } from "./templates/simpleform";
-
+import { ProfessionalDetailsForm } from "./templates/application";
+import { PersonalInformationForm } from "./templates/application";
+import { EducationForm } from "./templates/application";
 const responseTemplates: ResponseTemplate[] = [
   {
     Component: SimpleForm,
     name: "subscribe_form",
+  },
+  {
+    Component: PersonalInformationForm,
+    name: "personal_information_form",
+  },
+  {
+    Component: ProfessionalDetailsForm,
+    name: "professional_details_form",
+  },
+  {
+    Component: EducationForm,
+    name: "education_form",
   },
 ];
 
