@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import OpenAI from "openai";
 import { tools } from "./tools";
 import { systemPrompt } from "./systemPrompt";

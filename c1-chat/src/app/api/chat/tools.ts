@@ -11,6 +11,7 @@ const client = new GoogleImages(
 
 export const tools: (
   | RunnableToolFunctionWithoutParse
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | RunnableToolFunctionWithParse<any>
 )[] = [
   {
@@ -23,6 +24,7 @@ export const tools: (
         z.object({
           altText: z.string().describe("The alt text of the image"),
         })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ) as any,
       function: async ({ altText }: { altText: string }) => {
         const results = await client.search(altText, {
