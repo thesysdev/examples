@@ -6,20 +6,22 @@ import { transformStream } from "@crayonai/stream";
 import type { ChatCompletionMessageParam } from "openai/resources.mjs";
 import type { ChatCompletionStreamingRunner } from "openai/lib/ChatCompletionStreamingRunner.mjs";
 
+type ThreadId = string;
+
 // A basic, in-memory message history store
-const messageStore: ChatCompletionMessageParam[] = [
-  {
-    role: "system",
-    content: systemPrompt,
-  },
-];
+const messageStore: Map<ThreadId, ChatCompletionMessageParam[]> = new Map();
 
 export async function POST(req: NextRequest) {
-  const { messages } = (await req.json()) as {
+  const { messages, threadId } = (await req.json()) as {
     messages: ChatCompletionMessageParam[];
+    threadId: ThreadId;
   };
 
-  pushLatestMessageToStore(messages);
+  if (!messageStore.has(threadId)) {
+    messageStore.set(threadId, [{ role: "system", content: systemPrompt }]);
+  }
+
+  pushLatestMessageToStore(threadId, messages);
 
   const client = new OpenAI({
     baseURL: "https://api.thesys.dev/v1/embed",
@@ -28,13 +30,13 @@ export async function POST(req: NextRequest) {
 
   const runToolsResponse = client.beta.chat.completions.runTools({
     model: "c1-nightly",
-    messages: messageStore,
+    messages: messageStore.get(threadId)!,
     stream: true,
     parallelToolCalls: true,
     tools: tools,
   });
 
-  updateMessageHistoryStore(runToolsResponse);
+  updateMessageHistoryStore(threadId, runToolsResponse);
 
   const llmStream = await runToolsResponse;
 
@@ -57,11 +59,14 @@ export async function POST(req: NextRequest) {
  *
  * @param messages - The message history maintained on the FE
  */
-const pushLatestMessageToStore = (messages: ChatCompletionMessageParam[]) => {
+const pushLatestMessageToStore = (
+  threadId: ThreadId,
+  messages: ChatCompletionMessageParam[]
+) => {
   const latestMessage = messages[messages.length - 1];
 
   if (latestMessage.role === "user") {
-    messageStore.push(latestMessage);
+    pushMessageToThread(threadId, latestMessage);
   }
 };
 
@@ -71,9 +76,17 @@ const pushLatestMessageToStore = (messages: ChatCompletionMessageParam[]) => {
  * @param runner - The runner object
  */
 const updateMessageHistoryStore = (
+  threadId: ThreadId,
   runner: ChatCompletionStreamingRunner<null>
 ) => {
   runner.on("message", (event) => {
-    messageStore.push(event);
+    pushMessageToThread(threadId, event);
   });
+};
+
+const pushMessageToThread = (
+  threadId: ThreadId,
+  message: ChatCompletionMessageParam
+) => {
+  messageStore.set(threadId, [...messageStore.get(threadId)!, message]);
 };
