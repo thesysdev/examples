@@ -3,6 +3,7 @@ import type { RunnableToolFunctionWithoutParse } from "openai/lib/RunnableFuncti
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import GoogleImages from "google-images";
+import type { JSONSchema } from "openai/lib/jsonschema.mjs";
 
 const client = new GoogleImages(
   process.env.GOOGLE_CSE_ID!,
@@ -11,8 +12,7 @@ const client = new GoogleImages(
 
 export const tools: (
   | RunnableToolFunctionWithoutParse
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | RunnableToolFunctionWithParse<any>
+  | RunnableToolFunctionWithParse<{ altText: string }>
 )[] = [
   {
     type: "function",
@@ -24,8 +24,7 @@ export const tools: (
         z.object({
           altText: z.string().describe("The alt text of the image"),
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ) as any,
+      ) as JSONSchema,
       function: async ({ altText }: { altText: string }) => {
         const results = await client.search(altText, {
           size: "medium",
