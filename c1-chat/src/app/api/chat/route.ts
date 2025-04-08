@@ -4,7 +4,6 @@ import { tools } from "./tools";
 import { systemPrompt } from "./systemPrompt";
 import { transformStream } from "@crayonai/stream";
 import type { ChatCompletionMessageParam } from "openai/resources.mjs";
-import type { ChatCompletionStreamingRunner } from "openai/lib/ChatCompletionStreamingRunner.mjs";
 
 type ThreadId = string;
 
@@ -36,7 +35,10 @@ export async function POST(req: NextRequest) {
     tools: tools,
   });
 
-  updateMessageHistoryStore(threadId, runToolsResponse);
+  // Push the newly generated messages by the agent into the message history store
+  runToolsResponse.on("message", (event) =>
+    pushMessageToThread(threadId, event)
+  );
 
   const llmStream = await runToolsResponse;
 
@@ -68,20 +70,6 @@ const pushLatestMessageToStore = (
   if (latestMessage.role === "user") {
     pushMessageToThread(threadId, latestMessage);
   }
-};
-
-/**
- * Push the newly generated messages by the agent into the message history store
- *
- * @param runner - The runner object
- */
-const updateMessageHistoryStore = (
-  threadId: ThreadId,
-  runner: ChatCompletionStreamingRunner<null>
-) => {
-  runner.on("message", (event) => {
-    pushMessageToThread(threadId, event);
-  });
 };
 
 const pushMessageToThread = (
