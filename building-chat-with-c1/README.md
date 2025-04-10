@@ -1,4 +1,6 @@
-# Build a more advanced agent using [C1 by Thesys](https://thesys.dev) and tool calling
+# Building an advanced agent with C1 by Thesys
+
+This is a template for a Next.js application that uses [C1 by Thesys](https://thesys.dev) and tool calling.
 
 ## Getting Started
 
