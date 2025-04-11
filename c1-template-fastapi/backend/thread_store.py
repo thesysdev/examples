@@ -2,7 +2,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from typing import Dict, List, Optional, TypeAlias, TypedDict
 
 
-# New Message structure: holds an OpenAI message object and an optional ID
+# Message structure: holds an OpenAI message object and an optional ID
 class Message(TypedDict):
     openai_message: ChatCompletionMessageParam
     id: Optional[str]
