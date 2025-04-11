@@ -1,0 +1,46 @@
+{
+  "name": "ui",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@crayonai/react-ui": "0.7.6",
+    "@crayonai/stream": "0.6.4",
+    "@thesysai/genui-sdk": "0.6.7",
+    "@testing-library/dom": "^10.4.0",
+    "@types/jest": "^27.5.2",
+    "lucide-react": "^0.482.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2"
+  }
+}
