@@ -5,7 +5,7 @@
   "dependencies": {
     "@crayonai/react-ui": "0.7.6",
     "@crayonai/stream": "0.6.4",
-    "@thesysai/genui-sdk": "0.6.7",
+    "@thesysai/genui-sdk": "0.6.10",
     "@testing-library/dom": "^10.4.0",
     "@types/jest": "^27.5.2",
     "lucide-react": "^0.482.0",
