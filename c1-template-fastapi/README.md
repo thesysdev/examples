@@ -1,6 +1,6 @@
 # FastAPI Template
 
-This is a template for a FastAPI application that uses Crayon and OpenAI to create a chat agent. It demonstrates usage of `crayonai_stream` python package.
+This is a template for a FastAPI application that uses Thesys C1, @thesysai/genui-sdk to create a chat agent.
 
 ## Getting Started
 
