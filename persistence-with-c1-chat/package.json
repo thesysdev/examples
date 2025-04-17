@@ -6,22 +6,32 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:init": "prisma migrate dev",
+    "prepare": "npm run db:init"
   },
   "dependencies": {
+    "@crayonai/react-core": "0.7.4",
+    "@crayonai/react-ui": "0.7.8",
+    "@crayonai/stream": "^0.6.4",
+    "@prisma/client": "^6.6.0",
+    "@thesysai/genui-sdk": "0.6.12",
+    "next": "15.3.0",
+    "openai": "^4.95.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.0"
+    "react-ui": "1.0.0-beta.32"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
-    "@eslint/eslintrc": "^3"
+    "prisma": "^6.6.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
