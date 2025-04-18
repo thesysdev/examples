@@ -1,7 +1,12 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
-import { addMessage, getLLMThreadMessages } from "@/src/services/threadService";
+import {
+  addMessages,
+  getLLMThreadMessages,
+} from "@/src/services/threadService";
 import { transformStream } from "@crayonai/stream";
+import { tools } from "./tools";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
 
 type ThreadId = string;
 
@@ -21,7 +26,7 @@ export async function POST(req: NextRequest) {
     apiKey: process.env.THESYS_API_KEY,
   });
 
-  const runToolsResponse = client.chat.completions.create({
+  const runToolsResponse = client.beta.chat.completions.runTools({
     model: "c1-nightly",
     messages: [
       ...(await getLLMThreadMessages(threadId)),
@@ -31,30 +36,48 @@ export async function POST(req: NextRequest) {
       },
     ],
     stream: true,
+    tools,
+  });
+
+  const allRunToolsMessages: ChatCompletionMessageParam[] = [];
+  let isError = false;
+
+  runToolsResponse.on("error", () => {
+    isError = true;
+  });
+
+  runToolsResponse.on("message", (message) => {
+    allRunToolsMessages.push(message);
+  });
+
+  runToolsResponse.on("end", async () => {
+    // store messages on end only if there is no error
+    if (isError) {
+      return;
+    }
+
+    const runToolsMessagesWithId = allRunToolsMessages.map((m, index) => {
+      const id =
+        allRunToolsMessages.length - 1 === index // for last message (the response shown to user), use the responseId as provided by the UI
+          ? responseId
+          : crypto.randomUUID();
+
+      return {
+        ...m,
+        id,
+      };
+    });
+
+    const messagesToStore = [prompt, ...runToolsMessagesWithId];
+
+    await addMessages(threadId, ...messagesToStore);
   });
 
   const llmStream = await runToolsResponse;
 
-  const responseStream = transformStream(
-    llmStream,
-    (chunk) => {
-      return chunk.choices[0]?.delta?.content;
-    },
-    {
-      onEnd: async ({ accumulated }) => {
-        const messageContent = accumulated.filter((m) => m).join("");
-        if (messageContent) {
-          // store the messages in thread after the stream is complete
-          await addMessage(threadId, prompt);
-          await addMessage(threadId, {
-            role: "assistant",
-            content: messageContent,
-            id: responseId,
-          });
-        }
-      },
-    }
-  );
+  const responseStream = transformStream(llmStream, (chunk) => {
+    return chunk.choices[0]?.delta?.content;
+  });
 
   return new Response(responseStream as ReadableStream, {
     headers: {

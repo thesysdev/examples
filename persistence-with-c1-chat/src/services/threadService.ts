@@ -33,18 +33,18 @@ export const getThreadList = async (): Promise<Thread[]> => {
   }));
 };
 
-export const addMessage = async (threadId: string, message: Message) => {
+export const addMessages = async (threadId: string, ...messages: Message[]) => {
   const thread = await prisma.thread.findUniqueOrThrow({
     where: { id: threadId },
   });
 
-  const messages = (thread.messages as unknown as Message[]) ?? [];
-
-  messages.push(message);
+  const newMessages = ((thread.messages as unknown as Message[]) ?? []).concat(
+    messages
+  );
 
   await prisma.thread.update({
     where: { id: threadId },
-    data: { messages: messages as unknown as Prisma.InputJsonValue }, // Cast via unknown
+    data: { messages: newMessages as unknown as Prisma.InputJsonValue }, // Cast via unknown
   });
 };
 

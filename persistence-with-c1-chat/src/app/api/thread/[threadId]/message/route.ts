@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  addMessage,
+  addMessages,
   updateMessage,
   Message,
 } from "@/src/services/threadService";
@@ -16,7 +16,7 @@ export async function POST(
   try {
     const message = (await request.json()) as Message;
     const { threadId } = await params;
-    await addMessage(threadId, message);
+    await addMessages(threadId, message);
     return NextResponse.json({ message: "Message added" }, { status: 200 });
   } catch (error) {
     console.error("Error adding message:", error);
