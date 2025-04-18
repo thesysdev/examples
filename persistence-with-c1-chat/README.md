@@ -41,3 +41,36 @@ npm run dev
 ├── tsconfig.json         # TypeScript configuration
 └── README.md             # Project documentation
 ```
+
+## Overview
+
+This example is a simple chat application built with Next.js, Thesys GenUI SDK, and Prisma. It allows users to have conversations with an AI assistant, and persist the chat history.
+
+### Example prompt
+
+```
+What is the weather in New York?
+```
+
+### LLM tools
+
+only 1 tool is supported:
+
+```
+{
+  "location": "New York, NY"
+}
+```
+
+### Persistence
+
+#### UI
+
+See: src/app/page.tsx for the usage of useThreadManager and useThreadListManager to fetch the chat history on render and other integrations with backend apis.
+
+#### Backend
+
+Checkout the backend code in:
+
+1. `src/app/api/chat/route.ts` for the usage of the api/chat route to handle the tool call and persist the chat history.
+2. `src/app/api/thread` and `src/app/api/threads` for Thread and Message CRUD
