@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:init": "prisma migrate dev",
-    "prepare": "npm run db:init"
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prepare": "npm run prisma:migrate && npm run prisma:generate"
   },
   "dependencies": {
     "@crayonai/react-core": "0.7.4",

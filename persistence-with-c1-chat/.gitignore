@@ -43,3 +43,6 @@ next-env.d.ts
 # Prisma SQLite database file
 prisma/dev.db
 prisma/dev.db-journal
+
+# Generated Prisma Client
+src/generated/prisma/
