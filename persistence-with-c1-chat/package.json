@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@crayonai/react-core": "0.7.4",
-    "@crayonai/react-ui": "0.7.8",
+    "@crayonai/react-ui": "0.7.9",
     "@crayonai/stream": "^0.6.4",
     "@prisma/client": "^6.6.0",
     "@thesysai/genui-sdk": "0.6.12",
