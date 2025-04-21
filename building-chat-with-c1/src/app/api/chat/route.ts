@@ -11,8 +11,8 @@ type ThreadId = string;
 const messageStore: Map<ThreadId, ChatCompletionMessageParam[]> = new Map();
 
 export async function POST(req: NextRequest) {
-  const { messages, threadId } = (await req.json()) as {
-    messages: ChatCompletionMessageParam[];
+  const { prompt: latestMessage, threadId } = (await req.json()) as {
+    prompt: ChatCompletionMessageParam;
     threadId: ThreadId;
   };
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     messageStore.set(threadId, [{ role: "system", content: systemPrompt }]);
   }
 
-  pushLatestMessageToStore(threadId, messages);
+  pushLatestMessageToStore(threadId, latestMessage);
 
   const client = new OpenAI({
     baseURL: "https://api.thesys.dev/v1/embed",
@@ -63,10 +63,8 @@ export async function POST(req: NextRequest) {
  */
 const pushLatestMessageToStore = (
   threadId: ThreadId,
-  messages: ChatCompletionMessageParam[]
+  latestMessage: ChatCompletionMessageParam
 ) => {
-  const latestMessage = messages[messages.length - 1];
-
   if (latestMessage.role === "user") {
     pushMessageToThread(threadId, latestMessage);
   }
