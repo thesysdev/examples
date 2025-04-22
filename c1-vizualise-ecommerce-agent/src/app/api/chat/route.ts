@@ -19,7 +19,7 @@ const openai = new OpenAI({
 
 // Thesys Visualize client
 const thesysClient = new OpenAI({
-  baseURL: "http://localhost:3102/v1/visualize",
+  baseURL: "https://api.dev.thesys.dev/v1/visualize",
   apiKey: process.env.THESYS_API_KEY,
 });
 
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       ...previousAiMessages,
       { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
     ],
+    temperature: 0.1,
     stream: false,
     tools: tools,
   });
