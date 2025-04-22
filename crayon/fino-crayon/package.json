@@ -10,9 +10,9 @@
     "prepare": "prisma generate && prisma db push"
   },
   "dependencies": {
-    "@crayonai/react-core": "file:../../crayon/js/packages/react-core",
-    "@crayonai/react-ui": "file:../../crayon/js/packages/react-ui",
-    "@crayonai/stream": "file:../../crayon/js/packages/stream",
+    "@crayonai/react-core": "latest",
+    "@crayonai/react-ui": "latest",
+    "@crayonai/stream": "latest",
     "@prisma/client": "^6.3.0",
     "best-effort-json-parser": "^1.1.2",
     "next": "15.1.6",
