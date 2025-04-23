@@ -42,7 +42,7 @@ export const getThreadList = async (): Promise<Thread[]> => {
   }));
 };
 
-// Add raw AI messages (including user prompts, assistant responses, tool calls)
+// Add raw AI messages (including user prompts, assistant responses, tool calls) and UIMessages
 export const addMessages = async (threadId: string, aiMessages: AIMessage[], uiMessages: UIMessage[]) => {
   const thread = await prisma.thread.findUniqueOrThrow({
     where: { id: threadId },
@@ -99,17 +99,14 @@ export const getAIThreadMessages = async (
   return llmMessages;
 };
 
-// It updated a message by ID within the single, combined messages array.
-// We might need separate updateAIMessage/updateUIMessage functions if needed later.
 export const updateMessage = async (
   threadId: string,
-  updatedMessage: Message // This type would need changing too
+  updatedMessage: Message
 ): Promise<void> => {
   const thread = await prisma.thread.findUniqueOrThrow({
     where: { id: threadId },
   });
 
-  // This logic assumes a single 'messages' array and the old 'Message' type
   const uiMessages = (thread.uiMessages as unknown as Message[]) ?? [];
   const aiMessages = (thread.aiMessages as unknown as Message[]) ?? [];
 
@@ -152,7 +149,7 @@ export const updateThread = async (thread: {
 }): Promise<Thread> => {
   const updatedPrismaThread = await prisma.thread.update({
     where: { id: thread.threadId },
-    data: { name: thread.name }, // Explicitly update only name
+    data: { name: thread.name },
   });
 
   return {

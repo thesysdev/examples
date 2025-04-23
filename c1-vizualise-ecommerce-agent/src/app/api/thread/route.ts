@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(newThread, { status: 201 });
   } catch (error) {
     console.error("Error creating thread:", error);
-    // Consider more specific error handling based on error type
     return NextResponse.json(
       { message: "Error creating thread" },
       { status: 500 }

@@ -204,5 +204,4 @@ export const tools: RunnableToolFunctionWithParse<any>[] = [
       strict: true,
     },
   },
-  // Add removeFromCart and checkout tools later if needed
 ];
