@@ -7,8 +7,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Persistence with Genui sdk",
-  description: "A simple example of how to persist chat with Genui sdk",
+  title: "C1 Vizualise Ecommerce Agent",
+  description: "A simple example of how to use C1 Vizualise api",
 };
 
 export default function RootLayout({
