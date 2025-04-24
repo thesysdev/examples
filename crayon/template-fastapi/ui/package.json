@@ -3,8 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "@crayonai/react-core": "^0.6.1",
-    "@crayonai/react-ui": "^0.6.4",
+    "@crayonai/react-ui": "^0.7.9",
+    "@crayonai/react-core": "^0.7.4",
     "@testing-library/dom": "^10.4.0",
     "@types/jest": "^27.5.2",
     "lucide-react": "^0.482.0",
