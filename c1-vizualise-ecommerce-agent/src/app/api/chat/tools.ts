@@ -2,7 +2,7 @@ import type { RunnableToolFunctionWithParse } from "openai/lib/RunnableFunction.
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { JSONSchema } from "openai/lib/jsonschema.mjs";
-import { listProducts, getProductDetails, addToCard, getCart, listProductsSchema, getProductDetailsSchema, addToCartSchema, getCartSchema } from "../../../services/productService";
+import { listProducts, getProductDetails, addToCard, getCart, listProductsSchema, getProductDetailsSchema, addToCartSchema, getCartSchema } from "@/src/services/productService";
 
 export const tools: RunnableToolFunctionWithParse<any>[] = [
   {
