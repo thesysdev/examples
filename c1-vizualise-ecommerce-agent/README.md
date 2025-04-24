@@ -4,10 +4,10 @@ Example Next.js project with Thesys GenUI SDK with C1 Visualize api, showing how
 
 ### Overview
 
-This is an example e-commerce agent using the Visualize API. Here's the overall flow:
+This is an example e-commerce agent using the C1 Visualize API. Here's the overall flow:
 
 1. Sends a request to an LLM (like OpenAI) to generate a text/markdown response.
-2. Sends the final LLM response (after any tool calls) to the Visualize API endpoint to convert it into a Generative UI response.
+2. Sends the final LLM response (after any tool calls) to the C1 Visualize API endpoint to convert it into a Generative UI response.
 3. Stores the complete interaction history with the LLM (including requests, responses, and tool call messages) to maintain context for future interactions.
 4. Stores the user messages and the corresponding Assistant Generative UI responses in the Thread Store for display and persistence across page refreshes.
 
@@ -16,7 +16,7 @@ sequenceDiagram
     participant User
     participant Application
     participant LLM (OpenAI)
-    participant VisualizeAPI
+    participant C1 Visualize API
     participant ThreadStore
 
     User->>Application: Sends message
@@ -24,8 +24,8 @@ sequenceDiagram
     Note over LLM (OpenAI): Processes, potentially calls tools
     LLM (OpenAI)-->>Application: Returns final text response
     Application->>ThreadStore: Stores LLM interaction history (AIMessage)
-    Application->>VisualizeAPI: Sends final text response
-    VisualizeAPI-->>Application: Returns GenUI response
+    Application->>C1 Visualize API: Sends final text response
+    C1 Visualize API-->>Application: Returns GenUI response
     Application->>ThreadStore: Stores User message & GenUI response (UIMessage)
     Application-->>User: Displays GenUI response
 ```
