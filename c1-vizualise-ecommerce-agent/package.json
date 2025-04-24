@@ -13,11 +13,11 @@
     "prepare": "npm run prisma:migrate && npm run prisma:generate"
   },
   "dependencies": {
-    "@crayonai/react-core": "0.7.4",
-    "@crayonai/react-ui": "0.7.9",
+    "@crayonai/react-ui": "^0.7.9",
     "@crayonai/stream": "^0.6.4",
+    "@thesysai/genui-sdk": "^0.6.13",
+    "@crayonai/react-core": "^0.7.4",
     "@prisma/client": "^6.6.0",
-    "@thesysai/genui-sdk": "0.6.12",
     "next": "15.3.0",
     "openai": "^4.95.0",
     "react": "^19.0.0",
