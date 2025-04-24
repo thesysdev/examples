@@ -78,7 +78,6 @@ export const getUIThreadMessages = async (
   return messages;
 };
 
-// Renamed from getLLMThreadMessages
 export const getAIThreadMessages = async (
   threadId: string
 ): Promise<ChatCompletionMessageParam[]> => {
@@ -91,8 +90,8 @@ export const getAIThreadMessages = async (
 
   // Strip IDs before returning for OpenAI API compatibility
   const llmMessages = messages.map((msg) => {
-    const mappedMsg = { ...msg };
-    delete (mappedMsg as any).id; // Remove id property
+    const mappedMsg = { ...msg, id: undefined };
+    delete mappedMsg.id; // Remove id property
     return mappedMsg as ChatCompletionMessageParam;
   });
 
