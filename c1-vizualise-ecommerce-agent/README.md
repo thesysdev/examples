@@ -1,6 +1,6 @@
 Example Next.js project with Thesys GenUI SDK with C1 Visualize api, showing how to persist chat history, threads and tool.
 
-## Persistence with C1 Chat
+## C1 Visualize E-commerce Agent
 
 1. copy .env.example to .env and set the THESYS_API_KEY and OPEN_API_KEY
 

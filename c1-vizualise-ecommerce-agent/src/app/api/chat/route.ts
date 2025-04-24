@@ -125,13 +125,13 @@ export async function POST(req: NextRequest) {
       };
       newUIMessagesToStore.push(uiMessageToStore);
       await addMessages(threadId, newAiMessagesToStore, newUIMessagesToStore);
-    } 
+    }
   });
 
   const llmStream = await thesysStreamRunner;
 
   const responseStream = transformStream(llmStream, (chunk) => {
-    return chunk.choices[0]?.delta?.content;
+    return chunk.choices[0]?.delta?.content || "";
   });
 
   return new Response(responseStream as ReadableStream, {
