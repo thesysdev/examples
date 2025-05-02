@@ -1,7 +1,7 @@
 import uuid
 import json
-from datetime import datetime
-from typing import Dict, List, Literal, Optional, Sequence
+from datetime import datetime, timezone
+from typing import Dict, List, Literal, Optional, Sequence, TypedDict
 
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from pydantic import BaseModel, Field
@@ -11,13 +11,13 @@ from graph import app
 
 class UIMessage(TypedDict):
     id: str
-    role: Literal["user", "assistant", "system", "tool"]
+    role: Literal["user", "assistant"]
     content: Optional[str]
 
 # Metadata for each thread (stored in memory)
 class ThreadMetadata(BaseModel):
-    name: str
-    createdAt: datetime = Field(default_factory=datetime.utcnow)
+    title: str
+    createdAt: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Information about each thread to be sent to the client
 class ThreadInfo(BaseModel):
@@ -28,22 +28,22 @@ class ThreadInfo(BaseModel):
 # Stores metadata {thread_id: ThreadMetadata}
 _thread_metadata_store: Dict[str, ThreadMetadata] = {}
 
-def create_thread(name: str) -> ThreadInfo:
+def create_thread(title: str) -> ThreadInfo:
     """Creates a new thread with a unique ID and initial metadata."""
     thread_id = str(uuid.uuid4())
-    metadata = ThreadMetadata(name=name)
+    metadata = ThreadMetadata(title=title)
     _thread_metadata_store[thread_id] = metadata
-    print(f"In-memory thread created: {thread_id}, Name: {name}")
+    print(f"In-memory thread created: {thread_id}, Title: {title}")
     return ThreadInfo(
         threadId=thread_id,
-        title=metadata.name,
+        title=metadata.title,
         createdAt=metadata.createdAt
     )
 
 def get_thread_list() -> List[ThreadInfo]:
     """Retrieves a list of all threads, sorted by creation date descending."""
     threads = [
-        ThreadInfo(threadId=tid, title=meta.name, createdAt=meta.createdAt)
+        ThreadInfo(threadId=tid, title=meta.title, createdAt=meta.createdAt)
         for tid, meta in _thread_metadata_store.items()
     ]
     threads.sort(key=lambda t: t.createdAt, reverse=True)
@@ -60,16 +60,16 @@ def delete_thread(thread_id: str) -> bool:
         print(f"Attempted to delete non-existent in-memory thread: {thread_id}")
         return False
 
-def update_thread(thread_id: str, name: str) -> Optional[ThreadInfo]:
-    """Updates the name of a thread. Returns updated ThreadInfo or None if not found."""
+def update_thread(thread_id: str, title: str) -> Optional[ThreadInfo]:
+    """Updates the title of a thread. Returns updated ThreadInfo or None if not found."""
     metadata = _thread_metadata_store.get(thread_id)
     if metadata:
-        metadata.name = name
+        metadata.title = title
         _thread_metadata_store[thread_id] = metadata # Update the store
-        print(f"In-memory thread updated: {thread_id}, New Name: {name}")
+        print(f"In-memory thread updated: {thread_id}, New Title: {title}")
         return ThreadInfo(
             threadId=thread_id,
-            title=metadata.name,
+            title=metadata.title,
             createdAt=metadata.createdAt
         )
     else:

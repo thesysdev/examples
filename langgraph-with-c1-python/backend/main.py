@@ -20,10 +20,10 @@ class ChatRequest(BaseModel):
     responseId: str
 
 class CreateThreadRequest(BaseModel):
-    name: str
+    title: str
 
 class UpdateThreadRequest(BaseModel):
-    name: str
+    title: str
 
 # --- FastAPI App Instance --- #
 fastapi_app = FastAPI(title="LangGraph Chat API", docs_url="/docs")
@@ -59,7 +59,7 @@ def get_threads():
 @fastapi_app.post("/threads", response_model=ThreadInfo)
 def create_thread_endpoint(request: CreateThreadRequest):
     """Creates a new thread metadata entry."""
-    return thread_service.create_thread(name=request.name)
+    return thread_service.create_thread(title=request.title)
 
 @fastapi_app.get("/threads/{thread_id}/messages", response_model=List[UIMessage])
 async def get_messages_endpoint(thread_id: str):
@@ -78,8 +78,8 @@ def delete_thread_endpoint(thread_id: str):
 
 @fastapi_app.put("/threads/{thread_id}", response_model=ThreadInfo)
 def update_thread_endpoint(thread_id: str, request: UpdateThreadRequest):
-    """Updates a thread's metadata (name)."""
-    updated_thread = thread_service.update_thread(thread_id, request.name)
+    """Updates a thread's metadata (title)."""
+    updated_thread = thread_service.update_thread(thread_id, request.title)
     if updated_thread is None:
         raise HTTPException(status_code=404, detail="Thread metadata not found")
     return updated_thread
@@ -90,7 +90,6 @@ async def update_message_endpoint(thread_id: str, message: UIMessage = Body(...)
     await thread_service.update_message(thread_id, message)
     return {"message": "Message update acknowledged"}
 
-# --- Optional: Run directly with uvicorn --- #
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000)

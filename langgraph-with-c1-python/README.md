@@ -14,7 +14,7 @@ This project integrates LangGraph with the Thesys C1 SDK as follows:
 1.  **FastAPI Backend:**
     *   Serves a `/chat` endpoint that uses LangGraph for streaming chat responses (`main.py`).
     *   Includes `/threads` endpoints for basic in-memory thread metadata management (`main.py`, `thread_service.py`).
-    *   Uses an in-memory dictionary (`_thread_metadata_store` in `thread_service.py`) to store thread metadata (name, creation date).
+    *   Uses an in-memory dictionary (`_thread_metadata_store` in `thread_service.py`) to store thread metadata (title, creation date).
     *   Uses `StreamingResponse` to send Server-Sent Events to the frontend.
 
 2.  **LangGraph Agent (`graph.py`):**

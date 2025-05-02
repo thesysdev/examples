@@ -9,9 +9,14 @@ A simple FastAPI server with a `/chat` endpoint.
 pip install -r requirements.txt
 ```
 
-2. Run the server:
+2. Set API Key: Export your Thesys API key as an environment variable. Create a new key on the [Thesys Console](https://chat.thesys.dev/console/keys) if you haven't already.
 ```bash
-uvicorn main:app --reload
+export THESYS_API_KEY=sk-th-...
+```
+
+3. Run the server:
+```bash
+uvicorn main:fastapi_app --reload
 ```
 
 The server will be available at http://localhost:8000
