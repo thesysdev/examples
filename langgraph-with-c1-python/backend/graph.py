@@ -23,7 +23,7 @@ class AgentState(TypedDict):
 model = ChatOpenAI(
     model="c1-nightly",
     temperature=0,
-    base_url="http://localhost:3102/v1/embed",
+    base_url="https://api.thesys.dev/v1/embed",
     api_key=os.getenv("THESYS_API_KEY"),
 ).bind_tools(runnable_tools)
 
