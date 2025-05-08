@@ -84,7 +84,8 @@ export const useStateContext = () => {
 
 export const makeApiCallInternal = async (
   query: string,
-  dispatch: StateDispatch
+  dispatch: StateDispatch,
+  previousC1Response?: string
 ) => {
   const abortController = new AbortController();
 
@@ -100,6 +101,7 @@ export const makeApiCallInternal = async (
     },
     body: JSON.stringify({
       prompt: query,
+      previousC1Response,
     }),
     signal: abortController.signal,
   });
@@ -134,9 +136,13 @@ export const makeApiCallInternal = async (
   }
 };
 
-export const makeApiCall = async (query: string, dispatch: StateDispatch) => {
+export const makeApiCall = async (
+  query: string,
+  dispatch: StateDispatch,
+  previousC1Response?: string
+) => {
   try {
-    await makeApiCallInternal(query, dispatch);
+    await makeApiCallInternal(query, dispatch, previousC1Response);
   } catch (error) {
     console.error("Error in makeApiCall:", error);
   } finally {

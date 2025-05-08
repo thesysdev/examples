@@ -11,7 +11,7 @@ export const HomePage = () => {
   return (
     <StateContext.Provider value={{ state, dispatch }}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-[750px] mx-auto space-y-6">
           <div className="flex gap-4 items-center">
             <input
               className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
@@ -51,9 +51,9 @@ export const HomePage = () => {
                     payload: message,
                   });
                 }}
-                onAction={({ userPromptMessage }) => {
+                onAction={({ llmFriendlyMessage }) => {
                   if (!state.isSearching) {
-                    makeApiCall(userPromptMessage, dispatch);
+                    makeApiCall(llmFriendlyMessage, dispatch, state.c1Response);
                   }
                 }}
               />

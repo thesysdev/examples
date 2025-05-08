@@ -10,6 +10,7 @@ This project showcases how to integrate C1 component directly into your applicat
 2. UI makes a POST request to `/api/ask` route with user input
 3. `/api/ask` route uses C1 API to generate a response
 4. The response is rendered in the C1 component
+5. When user does some action on C1 component, it makes a POST request to `/api/ask` route with the user action along with the previous C1 response for context.
 
 C1Component usage is demonstrated in `src/app/home/HomePage.tsx`
 

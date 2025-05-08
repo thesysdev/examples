@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { transformStream } from "@crayonai/stream";
 import { tools } from "./tools";
 
@@ -9,9 +10,24 @@ const client = new OpenAI({
 });
 
 export async function POST(req: NextRequest) {
-  const { prompt } = (await req.json()) as {
+  const { prompt, previousC1Response } = (await req.json()) as {
     prompt: string;
+    previousC1Response?: string;
   };
+
+  const messages: ChatCompletionMessageParam[] = [];
+
+  if (previousC1Response) {
+    messages.push({
+      role: "assistant",
+      content: previousC1Response,
+    });
+  }
+
+  messages.push({
+    role: "user",
+    content: prompt,
+  });
 
   const runToolsResponse = client.beta.chat.completions.runTools({
     model: "c1-nightly",
@@ -21,13 +37,10 @@ export async function POST(req: NextRequest) {
         content: `You are a business research assistant just like crunchbase. You answer questions about a company or domain.
 given a company name or domain, you will search the web for the latest information.
 
-at the end of your response, add a form with single input field to ask for some other company or domain for another query.
+at the end of your response, add a form with single input field to ask for follow up questions.
 `,
       },
-      {
-        role: "user",
-        content: prompt!,
-      },
+      ...messages,
     ],
     stream: true,
     tools: tools,
