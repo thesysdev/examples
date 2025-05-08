@@ -1,6 +1,6 @@
 # Standalone C1 Component Demo
 
-Example Next.js project demonstrating how to use Thesys GenUI SDK with C1 API in a standalone component context, outside of a chat interface.
+Example Next.js project demonstrating how to use Thesys GenUI SDK with C1 API in a standalone component, outside of a chat interface.
 
 ## Overview
 
@@ -15,10 +15,10 @@ C1Component usage is demonstrated in `src/app/home/HomePage.tsx`
 
 ### Setup Instructions
 
-1. Copy .env.example to .env and set the THESYS_API_KEY
+1. Copy env.example to .env and set the THESYS_API_KEY
 
 ```bash
-cp .env.example .env
+cp env.example .env
 ```
 
 2. Install dependencies:
