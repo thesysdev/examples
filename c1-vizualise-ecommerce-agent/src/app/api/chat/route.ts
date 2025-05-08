@@ -37,6 +37,7 @@ const SYSTEM_PROMPT = `You are a friendly and helpful e-commerce assistant speci
 *   Be clear about product availability (stock levels for variants).
 *   Inform users that the only payment method available is **Cash on Delivery**.
 *   Your final response is processed by another assistant to generate a user interface (e.g., product lists, forms). Structure your responses clearly for this purpose.
+*   If user asks for output in a specific component for example a graph, table, etc, try your best to generate the output in the requested format, so that the other assistant can use it to generate the UI.
 `
 
 export async function POST(req: NextRequest) {
@@ -101,8 +102,9 @@ export async function POST(req: NextRequest) {
   // --- Step 4: Call Thesys  API and Stream to Client ---
   const thesysStreamRunner = thesysClient.beta.chat.completions.runTools({
     model: "c1-nightly",
-    messages: [
-      { role: "user", content: finalAssistantMessageForUI.content },
+    messages: [ ...previousAiMessages,
+      { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
+      { role: "assistant", content: finalAssistantMessageForUI.content },
     ],
     stream: true,
     tools: [],
