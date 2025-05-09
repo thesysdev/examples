@@ -1,153 +1,67 @@
-import { ActionDispatch, createContext, useContext, useReducer } from "react";
+import { useState } from "react";
+import { makeApiCall } from "./api";
 
+/**
+ * Type definition for the UI state.
+ * Contains all the state variables needed for the application's UI.
+ */
 export type UIState = {
+  /** The current search query input */
   query: string;
-  abortController?: AbortController;
+  /** The current response from the C1 API */
   c1Response: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  formState: undefined | Record<string, any>;
-  isSearching: boolean;
+  /** Whether an API request is currently in progress */
+  isLoading: boolean;
 };
 
-export type Action =
-  | {
-      type: "setQuery";
-      payload: string;
-    }
-  | {
-      type: "setC1Response";
-      payload: string;
-    }
-  | {
-      type: "search";
-      payload: AbortController;
-    }
-  | {
-      type: "search-end";
-    }
-  | {
-      type: "abort";
-    };
-
-export type StateDispatch = ActionDispatch<[action: Action]>;
-
-const reducer = (state: UIState, action: Action) => {
-  switch (action.type) {
-    case "setQuery": {
-      return { ...state, query: action.payload };
-    }
-    case "setC1Response": {
-      return { ...state, c1Response: action.payload };
-    }
-    case "search": {
-      return {
-        ...state,
-        abortController: action.payload,
-        isSearching: true,
-        formState: undefined,
-      };
-    }
-    case "search-end": {
-      return { ...state, abortController: undefined, isSearching: false };
-    }
-    case "abort": {
-      state.abortController?.abort();
-      return { ...state, abortController: undefined, isSearching: false };
-    }
-  }
-};
-
-const defaultState = {
-  query: "",
-  c1Response: "",
-  formState: undefined,
-  isSearching: false,
-};
-
+/**
+ * Custom hook for managing the application's UI state.
+ * Provides a centralized way to manage state and API interactions.
+ *
+ * @returns An object containing:
+ * - state: Current UI state
+ * - actions: Functions to update state and make API calls
+ */
 export const useUIState = () => {
-  const [state, dispatch] = useReducer(reducer, defaultState);
-  return { state, dispatch };
-};
+  // State for managing the search query input
+  const [query, setQuery] = useState("");
+  // State for storing the API response
+  const [c1Response, setC1Response] = useState("");
+  // State for tracking if a request is in progress
+  const [isLoading, setIsLoading] = useState(false);
+  // State for managing request cancellation
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null);
 
-export const StateContext = createContext<{
-  state: UIState;
-  dispatch: StateDispatch;
-} | null>(null);
-
-export const useStateContext = () => {
-  const value = useContext(StateContext);
-  if (!value) {
-    throw new Error("useStateContext is called outside of provider");
-  }
-  return value;
-};
-
-export const makeApiCallInternal = async (
-  query: string,
-  dispatch: StateDispatch,
-  previousC1Response?: string
-) => {
-  const abortController = new AbortController();
-
-  dispatch({
-    type: "search",
-    payload: abortController,
-  });
-
-  const response = await fetch("/api/ask", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      prompt: query,
+  /**
+   * Wrapper function around makeApiCall that provides necessary state handlers.
+   * This keeps the component interface simple while handling all state management internally.
+   */
+  const handleApiCall = async (
+    searchQuery: string,
+    previousC1Response?: string
+  ) => {
+    await makeApiCall({
+      searchQuery,
       previousC1Response,
-    }),
-    signal: abortController.signal,
-  });
-
-  const decoder = new TextDecoder();
-
-  const stream = response.body?.getReader();
-
-  if (!stream) {
-    throw new Error("response.body not found");
-  }
-
-  let c1Response = "";
-
-  while (true) {
-    const { done, value } = await stream.read();
-    const chunk = decoder.decode(value, { stream: !done });
-
-    try {
-      c1Response += chunk;
-      dispatch({
-        type: "setC1Response",
-        payload: c1Response,
-      });
-    } catch {
-      break;
-    }
-
-    if (done) {
-      break;
-    }
-  }
-};
-
-export const makeApiCall = async (
-  query: string,
-  dispatch: StateDispatch,
-  previousC1Response?: string
-) => {
-  try {
-    await makeApiCallInternal(query, dispatch, previousC1Response);
-  } catch (error) {
-    console.error("Error in makeApiCall:", error);
-  } finally {
-    dispatch({
-      type: "search-end",
+      setC1Response,
+      setIsLoading,
+      abortController,
+      setAbortController,
     });
-  }
+  };
+
+  // Return the state and actions in a structured format
+  return {
+    state: {
+      query,
+      c1Response,
+      isLoading,
+    },
+    actions: {
+      setQuery,
+      setC1Response,
+      makeApiCall: handleApiCall,
+    },
+  };
 };

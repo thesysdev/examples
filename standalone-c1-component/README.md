@@ -16,7 +16,7 @@ C1Component usage is demonstrated in `src/app/home/HomePage.tsx`
 
 ### Setup Instructions
 
-1. Copy env.example to .env and set the THESYS_API_KEY
+1. Copy env.example to .env and set THESYS_API_KEY, TAVILY_API_KEY
 
 ```bash
 cp env.example .env
