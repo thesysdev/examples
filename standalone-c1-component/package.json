@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@crayonai/react-ui": "^0.7.10",
+    "@crayonai/stream": "^0.6.4",
     "@tavily/core": "^0.5.1",
     "@thesysai/genui-sdk": "^0.6.15",
     "next": "15.3.1",
