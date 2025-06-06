@@ -56,38 +56,6 @@ export class MCPClient {
       );
     } catch (e) {
       console.error("Failed to connect to MCP server:", e);
-      console.log("Trying alternative MCP server...");
-
-      try {
-        // Fallback to a simple math/calculator server if filesystem fails
-        const command = "pnpx";
-        const args = ["@modelcontextprotocol/server-brave-search@latest"];
-
-        this.transport = new StdioClientTransport({
-          command,
-          args,
-        });
-
-        await this.mcp.connect(this.transport);
-
-        const toolsResult = await this.mcp.listTools();
-        this.tools = toolsResult.tools.map((tool) => ({
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.inputSchema,
-          },
-        }));
-
-        console.log(
-          `Connected to fallback MCP server with ${this.tools.length} tools`
-        );
-      } catch (fallbackError) {
-        console.error("Fallback MCP server also failed:", fallbackError);
-        // Continue without MCP tools if both fail
-        this.tools = [];
-      }
     }
   }
 
@@ -116,44 +84,6 @@ export class MCPClient {
             `Failed to parse tool arguments: ${toolCall.function.arguments}`
           );
           console.error(`Parse error:`, parseError);
-
-          // Try to handle common incomplete JSON cases
-          let fixedArgs = toolCall.function.arguments.trim();
-
-          // If it's clearly incomplete, try to complete it
-          if (
-            fixedArgs.endsWith(",") ||
-            fixedArgs.endsWith("{") ||
-            fixedArgs.endsWith("[")
-          ) {
-            console.log("Arguments appear incomplete, skipping this tool call");
-            results.push({
-              tool_call_id: toolCall.id,
-              role: "tool" as const,
-              content: JSON.stringify({
-                error: "Tool arguments incomplete - please try again",
-              }),
-            });
-            continue;
-          }
-
-          // Try to fix simple cases like missing closing brace
-          if (fixedArgs.startsWith("{") && !fixedArgs.endsWith("}")) {
-            fixedArgs += "}";
-          } else if (fixedArgs.startsWith("[") && !fixedArgs.endsWith("]")) {
-            fixedArgs += "]";
-          }
-
-          try {
-            parsedArguments = JSON.parse(fixedArgs);
-            console.log(
-              "Successfully fixed and parsed arguments:",
-              parsedArguments
-            );
-          } catch {
-            console.error("Could not fix arguments, using empty object");
-            parsedArguments = {};
-          }
         }
 
         const result = await this.mcp.callTool({

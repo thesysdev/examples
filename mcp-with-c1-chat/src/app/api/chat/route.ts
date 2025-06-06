@@ -25,7 +25,7 @@ async function ensureMCPConnection(): Promise<void> {
 /**
  * Create OpenAI client with configured settings
  */
-function createOpenAIClient(): OpenAI {
+function createThesysClient(): OpenAI {
   return new OpenAI({
     baseURL: "https://api.thesys.dev/v1/embed/",
     apiKey: process.env.THESYS_API_KEY,
@@ -123,10 +123,6 @@ async function processConversationWithTools(
       }
     }
 
-    // Determine the response ID for this round
-    const currentResponseId =
-      round === 1 ? baseResponseId : `${baseResponseId}_round_${round}`;
-
     if (toolCalls.length > 0) {
       console.log(
         `Round ${round}: AI making ${toolCalls.length} tool call(s):`,
@@ -146,7 +142,6 @@ async function processConversationWithTools(
         role: "assistant" as const,
         content: assistantContent,
         tool_calls: toolCalls,
-        id: currentResponseId,
       };
       messageStore.addMessage(assistantMessage);
       currentMessages.push({
@@ -191,7 +186,6 @@ async function processConversationWithTools(
       messageStore.addMessage({
         role: "assistant",
         content: assistantContent,
-        id: currentResponseId,
       });
 
       break;
@@ -243,7 +237,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const { prompt, threadId, responseId } = (await req.json()) as RequestBody;
 
     // Initialize dependencies
-    const client = createOpenAIClient();
+    const client = createThesysClient();
     const messageStore = getMessageStore(threadId);
 
     // Add user message to conversation
