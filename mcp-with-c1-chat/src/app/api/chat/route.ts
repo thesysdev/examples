@@ -3,6 +3,7 @@ import OpenAI from "openai";
 import { DBMessage, getMessageStore } from "./messageStore";
 import { MCPClient } from "./mcp";
 import { makeC1Response } from "@thesysai/genui-sdk/server";
+import { JSONSchema } from "openai/lib/jsonschema.mjs";
 
 // Initialize MCP client
 const mcpClient = new MCPClient();
@@ -33,192 +34,101 @@ function createThesysClient(): OpenAI {
 }
 
 /**
- * Accumulate tool calls from streaming chunks
+ * Process the conversation using OpenAI's runTools
  */
-function accumulateToolCall(
-  toolCalls: OpenAI.ChatCompletionMessageToolCall[],
-  toolCall: OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall
-): void {
-  if (toolCall.index === undefined) return;
-
-  // Initialize tool call if it doesn't exist
-  if (!toolCalls[toolCall.index]) {
-    toolCalls[toolCall.index] = {
-      id: toolCall.id || "",
-      type: "function",
-      function: { name: "", arguments: "" },
-    };
-  }
-
-  const existingCall = toolCalls[toolCall.index];
-
-  // Accumulate function name
-  if (toolCall.function?.name) {
-    existingCall.function.name += toolCall.function.name;
-  }
-
-  // Accumulate function arguments
-  if (toolCall.function?.arguments) {
-    existingCall.function.arguments += toolCall.function.arguments;
-  }
-
-  // Update ID if provided
-  if (toolCall.id) {
-    existingCall.id = toolCall.id;
-  }
-}
-
-/**
- * Process the conversation with iterative tool calling and streaming
- */
-async function processConversationWithTools(
+async function processConversationWithRunTools(
   client: OpenAI,
-  initialMessages: OpenAI.ChatCompletionMessageParam[],
+  messages: OpenAI.ChatCompletionMessageParam[],
   messageStore: ReturnType<typeof getMessageStore>,
-  baseResponseId: string,
-  c1Response: ReturnType<typeof makeC1Response>,
-  maxRounds: number = 5
+  c1Response: ReturnType<typeof makeC1Response>
 ): Promise<void> {
-  const currentMessages = [...initialMessages];
-  let round = 0;
-
-  while (round < maxRounds) {
-    round++;
-    console.log(`Starting conversation round ${round}`);
-
-    // Add thinking state for initial processing
-    if (round === 1) {
-      c1Response.writeThinkItem({
-        title: "Processing your request...",
-        description:
-          "Analyzing your message and determining the best approach.",
-      });
-    }
-
-    // Create streaming completion
-    const llmStream = await client.chat.completions.create({
-      model: "c1-nightly",
-      messages: currentMessages,
-      tools: mcpClient.tools.length > 0 ? mcpClient.tools : undefined,
-      stream: true,
+  try {
+    c1Response.writeThinkItem({
+      title: "Processing your request...",
+      description: "Analyzing your message and determining the best approach.",
     });
 
-    let assistantContent = "";
-    const toolCalls: OpenAI.ChatCompletionMessageToolCall[] = [];
-
-    // Process the streaming response
-    for await (const chunk of llmStream) {
-      // Handle content streaming
-      if (chunk.choices[0]?.delta?.content) {
-        const content = chunk.choices[0].delta.content;
-        assistantContent += content;
-        c1Response.writeContent(content); // Stream content to C1 response
-      }
-
-      // Accumulate tool calls
-      if (chunk.choices[0]?.delta?.tool_calls) {
-        chunk.choices[0].delta.tool_calls.forEach((toolCall) => {
-          accumulateToolCall(toolCalls, toolCall);
+    // Use OpenAI's beta runTools method to handle tool execution automatically
+    const runner = client.beta.chat.completions
+      .runTools({
+        model: "c1-nightly",
+        messages: messages,
+        tools: mcpClient.tools.map((tool) => ({
+          type: "function",
+          function: {
+            name: tool.function.name,
+            description: tool.function.description || "",
+            parameters: tool.function.parameters as unknown as JSONSchema,
+            parse: JSON.parse,
+            function: async (args: unknown) => {
+              const results = await mcpClient.runTool({
+                tool_call_id: tool.function.name + Date.now().toString(),
+                name: tool.function.name,
+                args: args as Record<string, unknown>,
+              });
+              return results.content;
+            },
+          },
+        })),
+        stream: true,
+      })
+      .on("functionCall", (functionCall) => {
+        // Add thinking state when tools are being called
+        c1Response.writeThinkItem({
+          title: `Using tool: ${functionCall.name}`,
+          description:
+            "Executing external tools to gather the information you need.",
         });
-      }
-    }
-
-    if (toolCalls.length > 0) {
-      console.log(
-        `Round ${round}: AI making ${toolCalls.length} tool call(s):`,
-        toolCalls.map((tc) => tc.function.name).join(", ")
-      );
-
-      // Add thinking state for tool execution
-      const toolNames = toolCalls.map((tc) => tc.function.name).join(", ");
-      c1Response.writeThinkItem({
-        title: `Using ${toolCalls.length > 1 ? "tools" : "tool"}: ${toolNames}`,
-        description:
-          "Executing external tools to gather the information you need.",
-      });
-
-      // Add assistant message with tool calls to message store
-      const assistantMessage = {
-        role: "assistant" as const,
-        content: assistantContent,
-        tool_calls: toolCalls,
-      };
-      messageStore.addMessage(assistantMessage);
-      currentMessages.push({
-        role: "assistant",
-        content: assistantContent,
-        tool_calls: toolCalls,
-      });
-
-      try {
-        // Execute tool calls
-        const toolResults = await mcpClient.runTools(toolCalls);
-
-        // Add tool results to message store and current messages
-        toolResults.forEach((result) => {
-          messageStore.addMessage(result);
-          currentMessages.push(result);
+      })
+      .on("functionCallResult", () => {
+        // Add thinking state when processing tool results
+        c1Response.writeThinkItem({
+          title: "Processing results...",
+          description:
+            "Analyzing the information gathered from tools to provide you with a comprehensive response.",
         });
-
-        // Add thinking state for processing results
-        if (round < maxRounds) {
-          c1Response.writeThinkItem({
-            title: "Processing results...",
-            description:
-              "Analyzing the information gathered from tools to provide you with a comprehensive response.",
-          });
-        }
-
-        // Continue to next round for follow-up response
-        continue;
-      } catch (error) {
-        console.error(`Error executing tools in round ${round}:`, error);
+      })
+      .on("message", (message) => {
+        // Add messages to store as they're created
+        messageStore.addMessage(message);
+      })
+      .on("content", (delta: string) => {
+        // Stream content as it comes
+        c1Response.writeContent(delta);
+      })
+      .on("error", (error) => {
+        console.error("RunTools error:", error);
         c1Response.writeContent(
-          "\n\nI encountered an error while using tools, but here's what I found so far."
+          "Sorry, I encountered an error processing your request."
         );
-        break;
-      }
-    } else {
-      // No tool calls, this is the final response
-      console.log(`Round ${round}: Final response (no tool calls)`);
-
-      // Add final message to store
-      messageStore.addMessage({
-        role: "assistant",
-        content: assistantContent,
       });
 
-      break;
-    }
-  }
-
-  if (round >= maxRounds) {
-    console.warn(`Reached maximum rounds (${maxRounds}). Ending conversation.`);
+    await runner.finalChatCompletion();
+  } catch (error) {
+    console.error("Error in conversation processing:", error);
     c1Response.writeContent(
-      "\n\n(Reached maximum tool usage limit for this conversation)"
+      "Sorry, I encountered an error processing your request."
     );
+  } finally {
+    c1Response.end();
   }
-
-  c1Response.end(); // End the C1 response stream
 }
 
 /**
- * Create streaming response with tool call detection and execution
+ * Create streaming response using OpenAI's runTools
  */
 async function createStreamingResponse(
   client: OpenAI,
   messages: OpenAI.ChatCompletionMessageParam[],
-  messageStore: ReturnType<typeof getMessageStore>,
-  responseId: string
+  messageStore: ReturnType<typeof getMessageStore>
 ): Promise<ReadableStream<string>> {
   const c1Response = makeC1Response();
 
-  // Start the conversation processing
-  processConversationWithTools(
+  // Start the conversation processing with runTools
+  processConversationWithRunTools(
     client,
     messages,
     messageStore,
-    responseId,
     c1Response
   ).catch((error) => {
     console.error("Error in conversation processing:", error);
@@ -234,7 +144,7 @@ async function createStreamingResponse(
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     // Parse request body
-    const { prompt, threadId, responseId } = (await req.json()) as RequestBody;
+    const { prompt, threadId } = (await req.json()) as RequestBody;
 
     // Initialize dependencies
     const client = createThesysClient();
@@ -249,12 +159,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Get conversation history
     const messages = messageStore.getOpenAICompatibleMessageList();
 
-    // Create streaming response with tool support and thinking states
+    // Create streaming response with runTools
     const responseStream = await createStreamingResponse(
       client,
       messages,
-      messageStore,
-      responseId
+      messageStore
     );
 
     return new NextResponse(responseStream, {

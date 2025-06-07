@@ -59,58 +59,39 @@ export class MCPClient {
     }
   }
 
-  async runTools(toolCalls: OpenAI.ChatCompletionMessageToolCall[]) {
-    const results = [];
-
-    for (const toolCall of toolCalls) {
-      try {
-        console.log(`Calling MCP tool: ${toolCall.function.name}`);
-        console.log(`Arguments: ${toolCall.function.arguments}`);
-
-        // Validate and parse arguments
-        let parsedArguments;
-        try {
-          // Check if arguments is empty or incomplete
-          if (
-            !toolCall.function.arguments ||
-            toolCall.function.arguments.trim() === ""
-          ) {
-            parsedArguments = {};
-          } else {
-            parsedArguments = JSON.parse(toolCall.function.arguments);
-          }
-        } catch (parseError) {
-          console.error(
-            `Failed to parse tool arguments: ${toolCall.function.arguments}`
-          );
-          console.error(`Parse error:`, parseError);
-        }
-
-        const result = await this.mcp.callTool({
-          name: toolCall.function.name,
-          arguments: parsedArguments,
-        });
-
-        results.push({
-          tool_call_id: toolCall.id,
-          role: "tool" as const,
-          content: JSON.stringify(result.content),
-        });
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        console.error(`Error calling tool ${toolCall.function.name}:`, error);
-        results.push({
-          tool_call_id: toolCall.id,
-          role: "tool" as const,
-          content: JSON.stringify({
-            error: `Tool call failed: ${errorMessage}`,
-          }),
-        });
-      }
+  async runTool({
+    tool_call_id,
+    name,
+    args,
+  }: {
+    tool_call_id: string;
+    name: string;
+    args: Record<string, unknown>;
+  }) {
+    console.log(`Calling tool ${name} with args: '${JSON.stringify(args)}'`);
+    try {
+      const result = await this.mcp.callTool({
+        name,
+        arguments: args,
+      });
+      console.log(`Tool ${name} result:`, result);
+      return {
+        tool_call_id,
+        role: "tool" as const,
+        content: JSON.stringify(result.content),
+      };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(`Error calling tool ${name}:`, error);
+      return {
+        tool_call_id,
+        role: "tool" as const,
+        content: JSON.stringify({
+          error: `Tool call failed: ${errorMessage}`,
+        }),
+      };
     }
-
-    return results;
   }
 
   async disconnect() {
