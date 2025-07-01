@@ -8,7 +8,6 @@ import {
 import "@crayonai/react-ui/styles/index.css";
 import { ChatProvider } from "@crayonai/react-core";
 import {
-  Composer,
   Container,
   Messages,
   MobileHeader,
@@ -22,6 +21,7 @@ import {
   ThreadList,
 } from "@crayonai/react-ui/Shell";
 import * as apiClient from "@/src/apiClient";
+import { CustomComposer } from "../components/Composer";
 
 export default function Home() {
   const threadListManager = useThreadListManager({
@@ -75,7 +75,7 @@ export default function Home() {
             <ScrollArea>
               <Messages />
             </ScrollArea>
-            <Composer />
+            <CustomComposer />
           </ThreadContainer>
         </Container>
       </ChatProvider>
