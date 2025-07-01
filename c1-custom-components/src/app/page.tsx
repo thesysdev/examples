@@ -20,24 +20,31 @@ import {
   ThreadContainer,
   ThreadList,
 } from "@crayonai/react-ui/Shell";
-import * as apiClient from "@/src/apiClient";
 import { CustomComposer } from "../components/Composer";
 
 export default function Home() {
+  // Call relevant APIs to manage thread list here
   const threadListManager = useThreadListManager({
-    fetchThreadList: async () => apiClient.getThreadList(),
-    deleteThread: async (threadId) => apiClient.deleteThread(threadId),
-    updateThread: async (t) => apiClient.updateThread(t),
+    fetchThreadList: async () => [],
+    deleteThread: async () => {},
+    updateThread: async (t) => t,
     onSwitchToNew: async () => {},
-    onSelectThread: async (threadId) => apiClient.getMessages(threadId),
-    createThread: async (message) => apiClient.createThread(message.message!),
+    onSelectThread: async () => {},
+    createThread: async ({ message }) => {
+      return {
+        id: "1",
+        threadId: "1",
+        title: message ?? "New Thread",
+        createdAt: new Date(),
+      };
+    },
   });
 
+  // Call relevant APIs to manage thread here
   const threadManager = useThreadManager({
     threadListManager,
-    loadThread: async (threadId) => apiClient.getMessages(threadId),
-    onUpdateMessage: async ({ message }) =>
-      apiClient.updateMessage(threadListManager.selectedThreadId!, message),
+    loadThread: async () => [],
+    onUpdateMessage: async () => {},
     processMessage: async ({ messages }) => {
       const latestMessage = messages[messages.length - 1];
       const response = await fetch("/api/chat", {
