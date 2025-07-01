@@ -1,0 +1,37 @@
+{
+  "name": "template-c1",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prepare": "npm run prisma:migrate && npm run prisma:generate"
+  },
+  "dependencies": {
+    "@crayonai/react-ui": "^0.7.10",
+    "@crayonai/stream": "^0.6.4",
+    "@prisma/client": "^6.10.1",
+    "@thesysai/genui-sdk": "^0.6.18",
+    "next": "15.2.4",
+    "openai": "^4.91.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.4",
+    "prisma": "^6.10.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
