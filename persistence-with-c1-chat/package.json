@@ -13,16 +13,17 @@
     "prepare": "npm run prisma:migrate && npm run prisma:generate"
   },
   "dependencies": {
-    "@crayonai/react-ui": "^0.7.9",
-    "@crayonai/stream": "^0.6.4",
-    "@thesysai/genui-sdk": "^0.6.13",
-    "@crayonai/react-core": "^0.7.4",
+    "@crayonai/react-core": "^0.7.6",
+    "@crayonai/react-ui": "0.8.14",
+    "@crayonai/stream": "0.6.4",
+    "@thesysai/genui-sdk": "0.6.27",
     "@prisma/client": "^6.6.0",
     "next": "15.3.0",
     "openai": "^4.95.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-ui": "1.0.0-beta.32"
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

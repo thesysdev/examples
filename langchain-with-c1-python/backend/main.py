@@ -21,7 +21,7 @@ class ChainInput(BaseModel):
 # 1. Create model
 model = ChatOpenAI(
     base_url="https://api.thesys.dev/v1/embed",
-    model="c1-nightly",
+    model="c1/anthropic/claude-3.5-sonnet/v-20250617", # available models: https://docs.thesys.dev/guides/models-pricing#model-table
     api_key=os.environ.get("THESYS_API_KEY")
 )
 

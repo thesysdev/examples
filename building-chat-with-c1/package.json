@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@crayonai/react-ui": "^0.7.9",
-    "@crayonai/stream": "^0.6.4",
-    "@thesysai/genui-sdk": "^0.6.13",
+    "@crayonai/react-ui": "0.8.14",
+    "@crayonai/stream": "0.6.4",
+    "@thesysai/genui-sdk": "0.6.27",
     "google-images": "^2.1.0",
     "next": "15.2.4",
     "openai": "^4.91.1",
