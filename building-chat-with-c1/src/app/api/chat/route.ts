@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   });
 
   const runToolsResponse = client.beta.chat.completions.runTools({
-    model: "c1-nightly",
+    model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
     messages: messageStore.get(threadId)!,
     stream: true,
     parallelToolCalls: true,

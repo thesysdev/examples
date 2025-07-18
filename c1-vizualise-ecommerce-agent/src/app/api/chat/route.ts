@@ -38,7 +38,7 @@ const SYSTEM_PROMPT = `You are a friendly and helpful e-commerce assistant speci
 *   Inform users that the only payment method available is **Cash on Delivery**.
 *   Your final response is processed by another assistant to generate a user interface (e.g., product lists, forms). Structure your responses clearly for this purpose.
 *   If user asks for output in a specific component for example a graph, table, etc, try your best to generate the output in the requested format, so that the other assistant can use it to generate the UI.
-`
+`;
 
 export async function POST(req: NextRequest) {
   const { prompt, threadId, responseId } = (await req.json()) as {
@@ -67,7 +67,6 @@ export async function POST(req: NextRequest) {
   await runner.done();
   const finalMessages = runner.messages;
 
-
   // Find the user message and the final assistant message(s) from the run
   const newAiMessagesToStore: AIMessage[] = [];
   const newUIMessagesToStore: UIMessage[] = [];
@@ -77,10 +76,17 @@ export async function POST(req: NextRequest) {
   newUIMessagesToStore.push(prompt);
 
   // Add messages generated during the OpenAI run (assistant responses, tool calls/results)
-  finalMessages.forEach(msg => {
-    if (!previousAiMessages.some(prevMsg => JSON.stringify(prevMsg) === JSON.stringify(msg))) {
-      if (msg.role !== 'user') {
-        newAiMessagesToStore.push({ ...msg, id: crypto.randomUUID() } as AIMessage);
+  finalMessages.forEach((msg) => {
+    if (
+      !previousAiMessages.some(
+        (prevMsg) => JSON.stringify(prevMsg) === JSON.stringify(msg)
+      )
+    ) {
+      if (msg.role !== "user") {
+        newAiMessagesToStore.push({
+          ...msg,
+          id: crypto.randomUUID(),
+        } as AIMessage);
       }
     }
   });
@@ -89,10 +95,13 @@ export async function POST(req: NextRequest) {
 
   // Find the last assistant message that is intended for the user
   const finalAssistantMessageForUI = finalMessages
-    .filter(m => m.role === 'assistant' && m.content)
+    .filter((m) => m.role === "assistant" && m.content)
     .pop();
 
-  if (!finalAssistantMessageForUI || typeof finalAssistantMessageForUI.content !== 'string') {
+  if (
+    !finalAssistantMessageForUI ||
+    typeof finalAssistantMessageForUI.content !== "string"
+  ) {
     console.error("No final assistant message content found after OpenAI run.");
     return new Response("", { status: 200 });
   }
@@ -101,8 +110,9 @@ export async function POST(req: NextRequest) {
 
   // --- Step 4: Call Thesys  API and Stream to Client ---
   const thesysStreamRunner = thesysClient.beta.chat.completions.runTools({
-    model: "c1-nightly",
-    messages: [ ...previousAiMessages,
+    model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
+    messages: [
+      ...previousAiMessages,
       { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
       { role: "assistant", content: finalAssistantMessageForUI.content },
     ],
@@ -118,7 +128,8 @@ export async function POST(req: NextRequest) {
 
   thesysStreamRunner.on("end", async () => {
     // --- Step 5: Store Final UI Message ---
-    const finalUIMessageFromStream = allThesysMessages[allThesysMessages.length - 1];
+    const finalUIMessageFromStream =
+      allThesysMessages[allThesysMessages.length - 1];
 
     if (finalUIMessageFromStream) {
       const uiMessageToStore: UIMessage = {

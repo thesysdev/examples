@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     responseId: string;
   };
   const client = new OpenAI({
-    baseURL: "http://localhost:3102/v1/embed/",
+    baseURL: "https://api.thesys.dev/v1/embed/",
     apiKey: process.env.THESYS_API_KEY,
   });
   const messageStore = getMessageStore(threadId);
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   messageStore.addMessage(prompt);
 
   const llmStream = await client.chat.completions.create({
-    model: "c1-nightly",
+    model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
     messages: messageStore.getOpenAICompatibleMessageList(),
     stream: true,
   });

@@ -9,11 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@crayonai/react-core": "^0.7.4",
-    "@crayonai/react-ui": "^0.7.9",
-    "@crayonai/stream": "^0.6.4",
+    "@crayonai/react-core": "^0.7.6",
+    "@crayonai/react-ui": "0.8.14",
+    "@crayonai/stream": "0.6.4",
+    "@thesysai/genui-sdk": "0.6.27",
     "@modelcontextprotocol/sdk": "^1.9.0",
-    "@thesysai/genui-sdk": "^0.6.13",
     "best-effort-json-parser": "^1.1.3",
     "eventsource-parser": "^3.0.1",
     "next": "15.1.6",

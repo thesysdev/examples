@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@thesysai/genui-sdk": "^0.6.27"
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
-    "@thesysai/genui-sdk": "^0.6.18",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",

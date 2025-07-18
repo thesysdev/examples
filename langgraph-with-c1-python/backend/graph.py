@@ -21,7 +21,7 @@ class AgentState(TypedDict):
 
 # Initialize model and bind tools in one step
 model = ChatOpenAI(
-    model="c1-nightly",
+    model="c1/anthropic/claude-3.5-sonnet/v-20250617", # available models: https://docs.thesys.dev/guides/models-pricing#model-table
     temperature=0,
     base_url="https://api.thesys.dev/v1/embed",
     api_key=os.getenv("THESYS_API_KEY"),
