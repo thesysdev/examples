@@ -12,7 +12,7 @@ type ThreadId = string;
 
 const client = new OpenAI({
   baseURL: "https://api.thesys.dev/v1/embed",
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.THESYS_API_KEY,
 });
 
 export async function POST(req: NextRequest) {
