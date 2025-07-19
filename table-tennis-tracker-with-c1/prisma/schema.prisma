@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Thread {
+  id        String   @id @default(cuid())
+  name      String
+  messages  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Player {
+  id     String  @id @default(cuid())
+  name   String  @unique
+  skill  Int     @default(0)
+  gamesA Game[]  @relation("PlayerA")
+  gamesB Game[]  @relation("PlayerB")
+  wins   Game[]  @relation("Winner")
+}
+
+model Game {
+  id           String   @id
+  playerAId    String
+  playerBId    String
+  playerA      Player   @relation("PlayerA", fields: [playerAId], references: [id])
+  playerB      Player   @relation("PlayerB", fields: [playerBId], references: [id])
+  playerAScore Int      @default(0)
+  playerBScore Int      @default(0)
+  winnerId     String?
+  winner       Player?  @relation("Winner", fields: [winnerId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  status       String   @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+}
