@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
   // --- Step 4: Call Thesys  API and Stream to Client ---
   const thesysStreamRunner = thesysClient.beta.chat.completions.runTools({
-    model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
+    model: "c1-nightly",
     messages: [
       ...previousAiMessages,
       { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
