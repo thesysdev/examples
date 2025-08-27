@@ -1,0 +1,3 @@
+- pnpx create-next-app@latest vercel-ai-sdk
+- pnpm install ai @ai-sdk/react @ai-sdk/openai
+- pnpm install --save @thesysai/genui-sdk @crayonai/react-ui @crayonai/react-core
