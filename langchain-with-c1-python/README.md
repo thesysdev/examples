@@ -2,6 +2,8 @@
 
 This repo is a simple example of a natural language to sql query processing using Langchain and Generative UI API C1 by Thesys. The backend is a Python server powered by [FastAPI](https://fastapi.tiangolo.com/) and [LangServe](https://python.langchain.com/docs/langserve), and it can answer natural language questions about the Chinook sample database.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Project Structure
 
 - `frontend/`: (Placeholder) A directory for a potential frontend application.

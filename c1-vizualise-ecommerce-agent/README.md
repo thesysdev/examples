@@ -1,6 +1,8 @@
+# C1 Visualize E-commerce Agent
+
 Example Next.js project with Thesys GenUI SDK with C1 Visualize api, showing how to persist chat history, threads and tool.
 
-## C1 Visualize E-commerce Agent
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
 
 ### Overview
 

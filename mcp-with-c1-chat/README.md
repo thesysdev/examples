@@ -2,6 +2,8 @@
 
 This is a [C1 by Thesys](https://thesys.dev) project that demonstrates MCP (Model Context Protocol) server integration with streaming chat capabilities.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Features
 
 - **C1 Chat Integration**: Powered by Thesys C1 for intelligent conversations
