@@ -2,6 +2,8 @@
 
 This is an example FastAPI application demonstrating how to integrate a LangGraph chat agent with the Thesys C1 SDK (`@thesysai/genui-sdk`) for a persistent, multi-turn chat experience with tool usage.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Getting Started
 
 1.  **Run the Backend Server:** See [backend/README.md](./backend/README.md) for instructions.

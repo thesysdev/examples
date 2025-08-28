@@ -2,6 +2,8 @@
 
 This example showcases a Next.js project using the Thesys GenUI SDK to create a "Table Tennis Analyst" AI assistant called Rally King.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Getting Started
 
 1.  **Set up environment variables:**

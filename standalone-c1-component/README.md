@@ -2,6 +2,8 @@
 
 Example Next.js project demonstrating how to use Thesys GenUI SDK with C1 API in a standalone component, outside of a chat interface.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Overview
 
 This project showcases how to integrate C1 component directly into your application without requiring a chat interface. Here's the overall flow:

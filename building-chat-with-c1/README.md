@@ -2,6 +2,8 @@
 
 This is a template for a Next.js application that uses [C1 by Thesys](https://thesys.dev) and tool calling.
 
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
 ## Getting Started
 
 First, generate a new API key from [Thesys Console](https://chat.thesys.dev/console/keys) and then set it your environment variable.
