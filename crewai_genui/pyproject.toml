@@ -1,0 +1,25 @@
+[project]
+name = "crewai_genui"
+version = "0.1.0"
+description = "crewai-genui using crewAI"
+authors = [{ name = "Your Name", email = "you@example.com" }]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "crewai[tools]>=0.175.0,<1.0.0",
+    "streamlit>=1.28.0",
+    "streamlit-thesys>=0.0.2",
+]
+
+[project.scripts]
+crewai_genui = "crewai_genui.main:run"
+run_crew = "crewai_genui.main:run"
+train = "crewai_genui.main:train"
+replay = "crewai_genui.main:replay"
+test = "crewai_genui.main:test"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.crewai]
+type = "crew"

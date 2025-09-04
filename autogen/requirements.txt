@@ -1,0 +1,4 @@
+autogen-agentchat
+autogen-ext[openai,azure]
+streamlit
+streamlit_thesys

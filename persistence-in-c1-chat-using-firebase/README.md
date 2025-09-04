@@ -1,6 +1,11 @@
+# Persistence with C1 Chat using Firebase Firestore
+
+
 Example Next.js project with Thesys GenUI SDK, showing how to persist chat history and threads using Firebase Firestore.
 
-## Persistence with C1 Chat using Firebase Firestore
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
+## Get Started 
 
 1.  **Firebase Setup**:
     *   Create a Firebase project at [https://console.firebase.google.com/](https://console.firebase.google.com/).

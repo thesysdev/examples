@@ -1,6 +1,10 @@
+# Persistence with C1 Chat
+
 Example Next.js project with Thesys GenUI SDK, showing how to persist chat history, threads.
 
-## Persistence with C1 Chat
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
+## Get Started
 
 1. copy .env.example to .env and set the THESYS_API_KEY
 
