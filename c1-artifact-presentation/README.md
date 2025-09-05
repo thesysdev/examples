@@ -1,6 +1,6 @@
 # Presentation Assistant
 
-A minimal Next.js app that streams presentation content from OpenAI. The `/api/ask` route accepts a `prompt` and optional prior `presentation`, and streams back appended content. The homepage provides a professional UI with an input and a `<pre>` viewer.
+A minimal Next.js app that streams presentation content from OpenAI. The `/api/ask` route accepts a `prompt` and optional prior `presentation`, and streams back appended content. The homepage provides a professional UI with an input and a `C1Component` viewer.
 
 ## Setup
 
@@ -23,7 +23,7 @@ Open app in your browser and start prompting. Existing presentation content on t
 
 ### Backend
 
-1. /api/ask:
+/api/ask:
 
 - this endpoint accepts user prompt and optional prior presentation
 - it returns a stream of content
@@ -31,6 +31,11 @@ Open app in your browser and start prompting. Existing presentation content on t
 
 ### UI
 
+- Created home page with input and response renderer (using C1Component from @thesysai/genui-sdk)
+- When user submits a prompt, it calls the /api/ask endpoint with the prompt and presentation and streams the response to the C1Component
+
+## UI Setup
+
 1. Install @thesysai/genui-sdk, @crayon-ai/react-ui
-2. Created home page with input and response renderer (using C1Component from @thesysai/genui-sdk)
-3. When user submits a prompt, it calls the /api/ask endpoint with the prompt and presentation and streams the response to the C1Component
+2. add fonts: geist and inter
+3. import CSS: "@crayonai/react-ui/styles/index.css";
