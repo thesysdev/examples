@@ -4,7 +4,7 @@ A minimal Next.js app that streams presentation content from Thesys. The `/api/a
 
 ## Setup
 
-1. Set your OpenAI API key in the environment:
+1. Set your Thesys API key in the environment:
 
 ```bash
 export THESYS_API_KEY=your_api_key_here
