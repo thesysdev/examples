@@ -1,6 +1,6 @@
 # Presentation Assistant
 
-A minimal Next.js app that streams presentation content from OpenAI. The `/api/ask` route accepts a `prompt` and optional prior `presentation`, and streams back appended content. The homepage provides a professional UI with an input and a `C1Component` viewer.
+A minimal Next.js app that streams presentation content from Thesys. The `/api/ask` route accepts a `prompt` and optional prior `presentation`, and streams back appended content. The homepage provides a professional UI with an input and a `C1Component` viewer.
 
 ## Setup
 
