@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const client = new OpenAI({
     apiKey,
-    baseURL: "https://api.dev.thesys.dev/v1/artifact",
+    baseURL: "https://api.thesys.dev/v1/artifact",
   });
 
   const messages: Array<{
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   messages.push({ role: "user", content: prompt });
 
-  const stream = await client.chat.completions.runTools({
+  const stream = client.chat.completions.runTools({
     model: "c1/artifact/v-20250831",
     stream: true,
     messages,
@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
       }
     },
     {
+      onError: (error) => {
+        console.error("Error in ask route:", error);
+      },
       onEnd: () => {
         if (isAborted) {
           return;
