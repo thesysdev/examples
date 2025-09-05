@@ -18,3 +18,19 @@ npm run dev
 ```
 
 Open app in your browser and start prompting. Existing presentation content on the page is sent with each prompt to continue the document.
+
+## How it works
+
+### Backend
+
+1. /api/ask:
+
+- this endpoint accepts user prompt and optional prior presentation
+- it returns a stream of content
+- it adds user prompt and prior presentation to conversation history and calls the Thesys API to generate the content (using OpenAI client)
+
+### UI
+
+1. Install @thesysai/genui-sdk, @crayon-ai/react-ui
+2. Created home page with input and response renderer (using C1Component from @thesysai/genui-sdk)
+3. When user submits a prompt, it calls the /api/ask endpoint with the prompt and presentation and streams the response to the C1Component
