@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@crayonai/stream": "^0.6.4",
+    "@crayonai/react-ui": "^0.8.27",
     "next": "15.5.2",
     "openai": "^5.19.1",
     "react": "19.1.0",
