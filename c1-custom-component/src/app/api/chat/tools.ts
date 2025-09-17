@@ -19,14 +19,20 @@ export const tools: RunnableToolFunctionWithParse<any>[] = [
       },
       parameters: zodToJsonSchema(
         z.object({
-          departure: z.string().describe("The departure airport code (e.g., SFO)"),
+          departure: z
+            .string()
+            .describe("The departure airport code (e.g., SFO)"),
           arrival: z.string().describe("The arrival airport code (e.g., JFK)"),
-          departureDate: z.string().describe("The departure date in YYYY-MM-DD format"),
-          returnDate: z.string().optional().describe("The return date in YYYY-MM-DD format"),
-        })
+          departureDate: z
+            .string()
+            .describe("The departure date in YYYY-MM-DD format"),
+          returnDate: z
+            .string()
+            .optional()
+            .describe("The return date in YYYY-MM-DD format"),
+        }),
       ) as JSONSchema,
       function: async () => {
-        // In a real application, you would fetch this data from a flight API
         const mockFlights = [
           {
             flightNumber: "UA-245",

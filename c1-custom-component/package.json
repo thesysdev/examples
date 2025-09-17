@@ -1,16 +1,12 @@
 {
-  "name": "custom-components-with-c1-chat",
+  "name": "c1-custom-component",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "prisma:studio": "prisma studio",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:generate": "prisma generate",
-    "prepare": "npm run prisma:migrate && npm run prisma:generate"
+    "lint": "next lint"
   },
   "dependencies": {
     "@crayonai/react-core": "^0.7.6",
@@ -26,15 +22,14 @@
     "zod-to-json-schema": "^3.24.5"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.0",
-    "prisma": "^6.6.0",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@eslint/eslintrc": "^3.3.1",
+    "@types/node": "^20.17.30",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.2",
+    "eslint": "^9.24.0",
+    "eslint-config-next": "15.1.6",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
   }
 }
