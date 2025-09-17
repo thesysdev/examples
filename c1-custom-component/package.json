@@ -13,7 +13,6 @@
     "@crayonai/react-ui": "^0.8.31",
     "@crayonai/stream": "0.6.4",
     "@thesysai/genui-sdk": "0.6.34",
-    "@prisma/client": "^6.6.0",
     "next": "15.3.0",
     "openai": "latest",
     "react": "^19.0.0",
