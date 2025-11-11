@@ -12,6 +12,8 @@ export default function Home() {
     prompt,
     setPrompt,
     presentation,
+    artifactType,
+    changeArtifactType,
     isLoading,
     error,
     send,
@@ -33,6 +35,7 @@ export default function Home() {
 
         <OutputPanel
           presentation={presentation}
+          artifactType={artifactType}
           onClear={clear}
           isLoading={isLoading}
         />
@@ -48,6 +51,8 @@ export default function Home() {
         <Composer
           prompt={prompt}
           setPrompt={setPrompt}
+          artifactType={artifactType}
+          onArtifactTypeChange={changeArtifactType}
           isLoading={isLoading}
           onSend={() => send()}
           onStop={stop}

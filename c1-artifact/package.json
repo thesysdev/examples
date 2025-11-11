@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@crayonai/stream": "^0.6.4",
-    "@crayonai/react-ui": "^0.8.27",
+    "@crayonai/react-ui": "^0.8.43",
     "next": "15.5.2",
     "openai": "^5.19.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "@thesysai/genui-sdk": "0.6.33"
+    "@thesysai/genui-sdk": "0.6.42"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
