@@ -1,4 +1,4 @@
-import { ArtifactType } from "../hooks/usePresentationStream";
+import { ArtifactType } from "../hooks/useArtifactStream";
 
 type ComposerProps = {
   prompt: string;

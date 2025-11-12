@@ -1,6 +1,6 @@
 "use client";
 
-import { usePresentationStream } from "../hooks/usePresentationStream";
+import { useArtifactStream } from "../hooks/useArtifactStream";
 import { Header } from "../components/Header";
 import { Suggestions } from "../components/Suggestions";
 import { Composer } from "../components/Composer";
@@ -11,7 +11,7 @@ export default function Home() {
   const {
     prompt,
     setPrompt,
-    presentation,
+    artifact,
     artifactType,
     changeArtifactType,
     isLoading,
@@ -19,7 +19,7 @@ export default function Home() {
     send,
     stop,
     clear,
-  } = usePresentationStream();
+  } = useArtifactStream();
 
   const suggestions = [
     "Outline a 10-slide product launch presentation with section titles.",
@@ -34,7 +34,7 @@ export default function Home() {
         <Header />
 
         <OutputPanel
-          presentation={presentation}
+          artifact={artifact}
           artifactType={artifactType}
           onClear={clear}
           isLoading={isLoading}
