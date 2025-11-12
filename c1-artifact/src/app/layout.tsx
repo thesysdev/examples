@@ -19,8 +19,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Presentation Assistant",
-  description: "Stream and extend presentation content with OpenAI.",
+  title: "Artifact Assistant",
+  description: "Stream and extend artifact content with OpenAI.",
 };
 
 export default function RootLayout({

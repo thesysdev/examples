@@ -9,9 +9,11 @@ export async function POST(req: NextRequest) {
     return new Response("Missing THESYS_API_KEY", { status: 500 });
   }
 
-  const { prompt, presentation } = (await req.json()) as {
+  const { prompt, artifactType, artifactId, artifactContent } = (await req.json()) as {
     prompt?: string;
-    presentation?: string;
+    artifactType?: "slides" | "report";
+    artifactId?: string;
+    artifactContent?: string;
   };
 
   if (!prompt || typeof prompt !== "string") {
@@ -27,40 +29,25 @@ export async function POST(req: NextRequest) {
     role: "system" | "user" | "assistant";
     content: string;
   }> = [];
-
-  if (typeof presentation === "string" && presentation.trim().length > 0) {
-    messages.push({ role: "assistant", content: presentation });
+  
+  // Include previous artifact content if editing
+  if (typeof artifactContent === "string" && artifactContent.trim().length > 0) {
+    messages.push({ role: "assistant", content: artifactContent });
   }
-
   messages.push({ role: "user", content: prompt });
 
   const stream = client.chat.completions.runTools({
-    model: "c1/artifact/v-20250831",
+    model: "c1/artifact/v-20251030",
     stream: true,
     messages,
     abortSignal: req.signal,
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: "get_decorative_images",
-          description: "Get the decorative images for presentation",
-          parameters: {
-            type: "object",
-          },
-          function: () => {
-            return {
-              images: [
-                "https://images.unsplash.com/photo-1503455637927-730bce8583c0?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                "https://images.unsplash.com/photo-1487147264018-f937fba0c817?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                "https://images.unsplash.com/photo-1547623641-d2c56c03e2a7?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-              ],
-            };
-          },
-        },
-      },
-    ],
+    tools: [],
+    metadata: {
+      thesys: JSON.stringify({
+        id: artifactId,
+        c1_artifact_type: artifactType,
+      }),
+    }
   });
 
   const c1Response = makeC1Response();

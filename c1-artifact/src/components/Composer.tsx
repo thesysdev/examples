@@ -1,6 +1,10 @@
+import { ArtifactType } from "../hooks/useArtifactStream";
+
 type ComposerProps = {
   prompt: string;
   setPrompt: (v: string) => void;
+  artifactType: ArtifactType;
+  onArtifactTypeChange: (type: ArtifactType) => void;
   isLoading: boolean;
   onSend: () => void;
   onStop: () => void;
@@ -9,6 +13,8 @@ type ComposerProps = {
 export function Composer({
   prompt,
   setPrompt,
+  artifactType,
+  onArtifactTypeChange,
   isLoading,
   onSend,
   onStop,
@@ -16,6 +22,18 @@ export function Composer({
   return (
     <section className="sticky bottom-6 w-full">
       <div className="rounded-2xl border border-white/10 bg-neutral-900/60 backdrop-blur p-2 shadow-2xl">
+        <div className="flex items-center gap-2 mb-2 px-1">
+          <label className="text-xs text-neutral-400">Type:</label>
+          <select
+            value={artifactType}
+            onChange={(e) => onArtifactTypeChange(e.target.value as ArtifactType)}
+            disabled={isLoading}
+            className="px-2 py-1 rounded-lg border border-white/10 bg-neutral-950/60 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-50"
+          >
+            <option value="slides">Slides</option>
+            <option value="report">Report</option>
+          </select>
+        </div>
         <div className="flex items-end gap-2">
           <textarea
             value={prompt}
@@ -53,8 +71,7 @@ export function Composer({
       <div className="mt-2 text-[11px] text-neutral-500">
         Tips: <br />
         1. Press Enter to send, Shift+Enter for newline. <br />
-        2. You can prompt to regenerate presentation with some changes or start
-        from scratch.
+        2. You can prompt to regenerate with changes or switch type to start fresh.
       </div>
     </section>
   );

@@ -2,14 +2,27 @@
 
 import { useCallback, useRef, useState } from "react";
 
-export function usePresentationStream() {
+export type ArtifactType = "slides" | "report";
+
+export function useArtifactStream() {
   const [prompt, setPrompt] = useState("");
-  const [presentation, setPresentation] = useState("");
+  const [artifact, setArtifact] = useState("");
+  const [artifactType, setArtifactType] = useState<ArtifactType>("slides");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
-  const previousPresentationRef = useRef<string>("");
+  const previousArtifactRef = useRef<string>("");
+  const artifactIdRef = useRef<string>("");
+  const currentArtifactTypeRef = useRef<ArtifactType>("slides");
+
+  const changeArtifactType = useCallback((newType: ArtifactType) => {
+    setArtifactType(newType);
+    // Clear artifact when switching artifact type
+    setArtifact("");
+    artifactIdRef.current = "";
+    currentArtifactTypeRef.current = newType;
+  }, []);
 
   const send = useCallback(
     async (overridePrompt?: string) => {
@@ -17,18 +30,29 @@ export function usePresentationStream() {
       if (!text) return;
       if (isLoading) return;
 
-      previousPresentationRef.current = presentation;
+      previousArtifactRef.current = artifact;
       setIsLoading(true);
       setError(null);
 
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Generate new artifactId only if starting fresh (no previous artifact)
+      if (!artifact) {
+        artifactIdRef.current = `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        currentArtifactTypeRef.current = artifactType;
+      }
+
       try {
         const res = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: text, presentation }),
+          body: JSON.stringify({
+            prompt: text,
+            artifactType,
+            artifactId: artifactIdRef.current,
+            artifactContent: artifact || undefined,
+          }),
           signal: controller.signal,
         });
 
@@ -45,14 +69,14 @@ export function usePresentationStream() {
           const { value, done } = await reader.read();
           if (done) break;
           accumulated += decoder.decode(value, { stream: true });
-          setPresentation(accumulated);
+          setArtifact(accumulated);
         }
 
         accumulated += decoder.decode();
-        setPresentation(accumulated);
+        setArtifact(accumulated);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
-          setPresentation(previousPresentationRef.current);
+          setArtifact(previousArtifactRef.current);
           setError(null);
         } else {
           const message =
@@ -65,26 +89,29 @@ export function usePresentationStream() {
         abortRef.current = null;
       }
     },
-    [prompt, presentation, isLoading]
+    [prompt, artifact, artifactType, isLoading]
   );
 
   const stop = useCallback(() => {
     if (isLoading) {
-      setPresentation(previousPresentationRef.current);
+      setArtifact(previousArtifactRef.current);
       setError(null);
     }
     abortRef.current?.abort();
   }, [isLoading]);
 
   const clear = useCallback(() => {
-    setPresentation("");
+    setArtifact("");
+    artifactIdRef.current = "";
     setError(null);
   }, []);
 
   return {
     prompt,
     setPrompt,
-    presentation,
+    artifact,
+    artifactType,
+    changeArtifactType,
     isLoading,
     error,
     send,
