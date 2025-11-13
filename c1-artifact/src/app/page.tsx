@@ -22,7 +22,7 @@ export default function Home() {
   } = useArtifactStream();
 
   const suggestions = [
-    "Outline a 10-slide product launch presentation with section titles.",
+    "Outline a 10-slide product launch presentation for next generation AI tool.",
     "Create a QBR deck structure: goals, metrics, wins, risks, roadmap.",
     "Draft a closing slide with key takeaways and next steps.",
     "Design a pitch deck outline: problem, solution, market, traction, ask.",
