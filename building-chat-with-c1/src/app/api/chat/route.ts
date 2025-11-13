@@ -27,8 +27,8 @@ export async function POST(req: NextRequest) {
     apiKey: process.env.THESYS_API_KEY,
   });
 
-  const runToolsResponse = client.beta.chat.completions.runTools({
-    model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
+  const llmStream = client.chat.completions.runTools({
+    model: "c1/anthropic/claude-sonnet-4/v-20250930", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
     messages: messageStore.get(threadId)!,
     stream: true,
     parallelToolCalls: true,
@@ -36,11 +36,8 @@ export async function POST(req: NextRequest) {
   });
 
   // Push the newly generated messages by the agent into the message history store
-  runToolsResponse.on("message", (event) =>
-    pushMessageToThread(threadId, event)
-  );
+  llmStream.on("message", (event) => pushMessageToThread(threadId, event));
 
-  const llmStream = await runToolsResponse;
 
   const responseStream = transformStream(llmStream, (chunk) => {
     return chunk.choices[0]?.delta?.content;
