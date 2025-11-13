@@ -100,11 +100,10 @@ export async function POST(req: NextRequest) {
   });
 
   const llmStream = client.chat.completions.runTools({
-    model: "c1/anthropic/claude-sonnet-4/v-20250915", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
+    model: "c1/anthropic/claude-sonnet-4/v-20250930", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
     messages: messageStore.getOpenAICompatibleMessageList(),
     stream: true,
     tools,
-    max_completion_tokens: 8000,
     metadata: {
       thesys: JSON.stringify({
         c1_custom_components: CUSTOM_COMPONENT_SCHEMAS,

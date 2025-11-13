@@ -9,12 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@crayonai/react-core": "^0.7.6",
-    "@crayonai/react-ui": "^0.8.31",
+    "@crayonai/react-ui": "0.9",
     "@crayonai/stream": "0.6.4",
-    "@thesysai/genui-sdk": "0.6.34",
+    "@thesysai/genui-sdk": "0.7.1",
+    "@crayonai/react-core": "^0.7.6",
     "next": "15.3.0",
-    "openai": "latest",
+    "openai": "^6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.24.2",
