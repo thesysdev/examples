@@ -1,6 +1,0 @@
-fastapi==0.110.0
-uvicorn==0.27.1
-pydantic==2.6.1
-openai==1.66.3
-python-dotenv==1.0.1
-crayonai_stream==0.6.2
