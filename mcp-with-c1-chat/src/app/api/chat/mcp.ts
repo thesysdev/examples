@@ -1,5 +1,5 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import OpenAI from "openai";
 
 export interface MCPTool {
@@ -10,52 +10,65 @@ export interface MCPTool {
 
 export class MCPClient {
   private mcp: Client;
-  private transport: StdioClientTransport | null = null;
+  private transport: StreamableHTTPClientTransport | null = null;
   public tools: OpenAI.ChatCompletionTool[] = [];
+  private currentServerUrl: string | null = null;
 
   constructor() {
-    this.mcp = new Client({ name: "c1-chat-mcp-client", version: "1.0.0" });
+    this.mcp = new Client({ name: "supabase", version: "1.0.0" });
   }
 
-  async connect() {
+  async connect(serverUrl: string) {
     try {
-      if (process.platform === "win32") {
-        throw new Error("Windows platform not fully tested");
+      // Reuse existing transport if connecting to the same server
+      if (this.transport && this.currentServerUrl === serverUrl) {
+        return;
       }
 
-      // Connect to filesystem MCP server (no authentication required)
-      const command = "pnpx";
-      const args = [
-        "@modelcontextprotocol/server-filesystem@latest",
-        process.cwd(),
-      ];
+      // Close existing transport if switching servers
+      if (this.transport) {
+        await this.transport.close();
+        this.transport = null;
+      }
 
-      console.log("Connecting to filesystem MCP server...");
+      console.log(`Connecting to MCP server at ${serverUrl}...`);
 
-      this.transport = new StdioClientTransport({
-        command,
-        args,
+      // Create transport without authentication
+      this.transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
+        requestInit: {
+          headers: {
+            Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`,
+          },
+        },
       });
 
       await this.mcp.connect(this.transport);
+      this.currentServerUrl = serverUrl;
 
       // List available tools from the MCP server
       const toolsResult = await this.mcp.listTools();
-      this.tools = toolsResult.tools.map((tool) => ({
-        type: "function" as const,
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.inputSchema,
-        },
-      }));
+      this.tools = toolsResult.tools.map(
+        (tool: {
+          name: string;
+          description?: string;
+          inputSchema: Record<string, unknown>;
+        }) => ({
+          type: "function" as const,
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.inputSchema,
+          },
+        })
+      );
 
       console.log(
-        `Connected to filesystem MCP server with ${this.tools.length} tools:`,
+        `Connected to MCP server with ${this.tools.length} tools:`,
         this.tools.map((t) => t.function.name).join(", ")
       );
     } catch (e) {
       console.error("Failed to connect to MCP server:", e);
+      throw e;
     }
   }
 
@@ -95,8 +108,13 @@ export class MCPClient {
   }
 
   async disconnect() {
+    if (this.mcp) {
+      await this.mcp.close();
+    }
     if (this.transport) {
       await this.transport.close();
+      this.transport = null;
     }
+    this.currentServerUrl = null;
   }
 }
