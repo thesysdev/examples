@@ -12,6 +12,11 @@ export type AIMessage = ChatCompletionMessageParam & {
 // UIMessage stores the message sent by Thesys Visualize API
 export type UIMessage = ChatCompletionMessageParam & {
   id: string;
+  rawData?: Array<{
+    toolName: string;
+    args: Record<string, unknown>;
+    data: unknown;
+  }>;
 };
 
 export type Message = AIMessage | UIMessage;
