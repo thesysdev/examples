@@ -60,7 +60,8 @@ export async function POST(req: NextRequest) {
     ],
     temperature: 0.1,
     stream: false,
-    tools: tools,
+    // tools: tools,
+    tools: [],
   });
 
   // Wait for the OpenAI call to complete (including potential tool calls)
