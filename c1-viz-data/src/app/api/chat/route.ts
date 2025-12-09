@@ -7,134 +7,10 @@ import {
   UIMessage,
 } from "@/src/services/threadService";
 import { transformStream } from "@crayonai/stream";
-// import { tools } from "./tools"; // Currently commented out in tools.ts
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-// import { JSONSchema } from "openai/lib/jsonschema.mjs";
+import { mcpClient, ensureMCPConnection } from "./tools";
 
 type ThreadId = string;
-
-export interface MCPTool {
-  name: string;
-  description: string;
-  input_schema: Record<string, unknown>;
-}
-
-export class MCPClient {
-  private mcp: Client;
-  private transport: StreamableHTTPClientTransport | null = null;
-  public tools: OpenAI.ChatCompletionTool[] = [];
-  private currentServerUrl: string | null = null;
-
-  constructor() {
-    this.mcp = new Client({ name: "supabase", version: "1.0.0" });
-  }
-
-  async connect(serverUrl: string) {
-    try {
-      // Reuse existing transport if connecting to the same server
-      if (this.transport && this.currentServerUrl === serverUrl) {
-        return;
-      }
-
-      // Close existing transport if switching servers
-      if (this.transport) {
-        await this.transport.close();
-        this.transport = null;
-      }
-
-      console.log(`Connecting to MCP server at ${serverUrl}...`);
-
-      // Create transport with authentication
-      this.transport = new StreamableHTTPClientTransport(new URL(serverUrl), {
-        requestInit: {
-          headers: {
-            Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`,
-          },
-        },
-      });
-
-      await this.mcp.connect(this.transport);
-      this.currentServerUrl = serverUrl;
-
-      // List available tools from the MCP server
-      const toolsResult = await this.mcp.listTools();
-      this.tools = toolsResult.tools.map(
-        (tool: {
-          name: string;
-          description?: string;
-          inputSchema: Record<string, unknown>;
-        }) => ({
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.inputSchema,
-          },
-        })
-      );
-
-      console.log(
-        `Connected to MCP server with ${this.tools.length} tools:`,
-        this.tools.map((t) => t.function.name).join(", ")
-      );
-    } catch (e) {
-      console.error("Failed to connect to MCP server:", e);
-      throw e;
-    }
-  }
-
-  async runTool({
-    tool_call_id,
-    name,
-    args,
-  }: {
-    tool_call_id: string;
-    name: string;
-    args: Record<string, unknown>;
-  }) {
-    console.log(`Calling tool ${name} with args: '${JSON.stringify(args)}'`);
-
-    try {
-      const result = await this.mcp.callTool({
-        name,
-        arguments: args,
-      });
-
-      console.log(`Tool ${name} result:`, result);
-
-      return {
-        tool_call_id,
-        role: "tool" as const,
-        content: JSON.stringify(result.content),
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error(`Error calling tool ${name}:`, error);
-
-      return {
-        tool_call_id,
-        role: "tool" as const,
-        content: JSON.stringify({
-          error: `Tool call failed: ${errorMessage}`,
-        }),
-      };
-    }
-  }
-
-  async disconnect() {
-    if (this.mcp) {
-      await this.mcp.close();
-    }
-    if (this.transport) {
-      await this.transport.close();
-      this.transport = null;
-    }
-    this.currentServerUrl = null;
-  }
-}
 
 // Standard OpenAI client
 const openai = new OpenAI({
@@ -146,9 +22,6 @@ const thesysClient = new OpenAI({
   baseURL: "https://api.thesys.dev/v1/visualize",
   apiKey: process.env.THESYS_API_KEY,
 });
-
-// Initialize MCP client
-const mcpClient = new MCPClient();
 
 const SYSTEM_PROMPT = `You are a helpful data analyst and business intelligence assistant with access to a live Supabase database. Your goal is to help users query, analyze, and visualize business data from our database.
 
@@ -182,19 +55,6 @@ const SYSTEM_PROMPT = `You are a helpful data analyst and business intelligence 
 - Never provide data analysis without first querying the database
 - Always base your response on the actual query results, not assumptions
 `;
-
-/**
- * Initialize MCP client connection if not already connected
- */
-async function ensureMCPConnection(): Promise<void> {
-  if (mcpClient.tools.length === 0) {
-    const serverUrl = process.env.MCP_SERVER_URL;
-    if (!serverUrl) {
-      throw new Error("MCP_SERVER_URL environment variable is required");
-    }
-    await mcpClient.connect(serverUrl);
-  }
-}
 
 export async function POST(req: NextRequest) {
   const { prompt, threadId, responseId } = (await req.json()) as {
@@ -334,16 +194,18 @@ export async function POST(req: NextRequest) {
                   try {
                     // The JSON data is double-escaped, so we need to parse it as a JSON string first
                     let actualData;
-                    
+
                     try {
                       // Try parsing the clean data as a JSON-encoded string
                       actualData = JSON.parse(`"${cleanJsonData}"`);
                       console.log("Parsed as JSON string:", actualData);
-                      
+
                       // Now parse the result as actual JSON
                       actualData = JSON.parse(actualData);
                     } catch {
-                      console.log("First parsing attempt failed, trying direct parse");
+                      console.log(
+                        "First parsing attempt failed, trying direct parse"
+                      );
                       // Fallback: try direct parsing with manual quote replacement
                       const manuallyFixed = cleanJsonData.replace(/\\"/g, '"');
                       actualData = JSON.parse(manuallyFixed);
