@@ -1,0 +1,194 @@
+import { PrismaClient, Prisma } from "../generated/prisma";
+import { Thread } from "@crayonai/react-core";
+import type { ChatCompletionMessageParam } from "openai/resources.mjs";
+
+const prisma = new PrismaClient();
+
+// AIMessage stores the raw message from OpenAI including tool calls
+export type AIMessage = ChatCompletionMessageParam & {
+  id: string;
+};
+
+// UIMessage stores the message sent by Thesys Visualize API
+export type UIMessage = ChatCompletionMessageParam & {
+  id: string;
+  rawData?: Array<{
+    toolName: string;
+    args: Record<string, unknown>;
+    data: unknown;
+  }>;
+};
+
+export type Message = AIMessage | UIMessage;
+
+// Function 1: Create Thread
+export const createThread = async (name: string): Promise<Thread> => {
+  const newThread = await prisma.thread.create({
+    data: {
+      name: name,
+      aiMessages: [], // Initialize aiMessages
+      uiMessages: [], // Initialize uiMessages
+    },
+  });
+
+  return {
+    threadId: newThread.id,
+    title: newThread.name,
+    createdAt: newThread.createdAt,
+  };
+};
+
+export const getThreadList = async (): Promise<Thread[]> => {
+  const threads = await prisma.thread.findMany();
+  return threads.map((thread) => ({
+    threadId: thread.id,
+    title: thread.name,
+    createdAt: thread.createdAt,
+  }));
+};
+
+// Add raw AI messages (including user prompts, assistant responses, tool calls) and UIMessages
+export const addMessages = async (
+  threadId: string,
+  aiMessages: AIMessage[],
+  uiMessages: UIMessage[]
+) => {
+  let thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { aiMessages: true, uiMessages: true },
+  });
+
+  // If thread doesn't exist, create it
+  if (!thread) {
+    await prisma.thread.create({
+      data: {
+        id: threadId,
+        name: "New Chat",
+        aiMessages: [],
+        uiMessages: [],
+      },
+    });
+    thread = { aiMessages: [], uiMessages: [] };
+  }
+
+  const aiNewMessages = (
+    (thread.aiMessages as unknown as AIMessage[]) ?? []
+  ).concat(aiMessages);
+
+  const uiNewMessages = (
+    (thread.uiMessages as unknown as UIMessage[]) ?? []
+  ).concat(uiMessages);
+
+  await prisma.thread.update({
+    where: { id: threadId },
+    data: {
+      aiMessages: aiNewMessages as unknown as Prisma.InputJsonValue,
+      uiMessages: uiNewMessages as unknown as Prisma.InputJsonValue,
+    },
+  });
+};
+
+export const getUIThreadMessages = async (
+  threadId: string
+): Promise<UIMessage[]> => {
+  const thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { uiMessages: true }, // Select uiMessages
+  });
+
+  // If thread doesn't exist, return empty array
+  if (!thread) {
+    return [];
+  }
+
+  // Directly return uiMessages, filtering is no longer needed here
+  const messages = (thread.uiMessages as unknown as UIMessage[]) ?? [];
+  return messages;
+};
+
+export const getAIThreadMessages = async (
+  threadId: string
+): Promise<ChatCompletionMessageParam[]> => {
+  const thread = await prisma.thread.findUnique({
+    where: { id: threadId },
+    select: { aiMessages: true }, // Select aiMessages
+  });
+
+  // If thread doesn't exist, return empty array (will be created later)
+  if (!thread) {
+    return [];
+  }
+
+  const messages = (thread.aiMessages as unknown as AIMessage[]) ?? [];
+
+  // Strip IDs before returning for OpenAI API compatibility
+  const llmMessages = messages.map((msg) => {
+    const mappedMsg = { ...msg, id: undefined };
+    delete mappedMsg.id; // Remove id property
+    return mappedMsg as ChatCompletionMessageParam;
+  });
+
+  return llmMessages;
+};
+
+export const updateMessage = async (
+  threadId: string,
+  updatedMessage: Message
+): Promise<void> => {
+  const thread = await prisma.thread.findUniqueOrThrow({
+    where: { id: threadId },
+  });
+
+  const uiMessages = (thread.uiMessages as unknown as Message[]) ?? [];
+  const aiMessages = (thread.aiMessages as unknown as Message[]) ?? [];
+
+  const uiMessageIndex = uiMessages.findIndex(
+    (msg) => msg.id === updatedMessage.id
+  );
+
+  const aiMessageIndex = aiMessages.findIndex(
+    (msg) => msg.id === updatedMessage.id && msg.role === "user"
+  );
+
+  if (uiMessageIndex !== -1) {
+    uiMessages[uiMessageIndex] = updatedMessage;
+    // aiMessageIndex could be -1 if it is an assistant message
+    if (aiMessageIndex !== -1) {
+      aiMessages[aiMessageIndex] = updatedMessage;
+    }
+
+    await prisma.thread.update({
+      where: { id: threadId },
+      data: {
+        uiMessages: uiMessages as unknown as Prisma.InputJsonValue,
+        aiMessages: aiMessages as unknown as Prisma.InputJsonValue,
+      },
+    });
+  } else {
+    console.warn(
+      `Message with id ${updatedMessage.id} not found in thread ${threadId}.`
+    );
+  }
+};
+
+export const deleteThread = async (threadId: string): Promise<void> => {
+  await prisma.thread.delete({
+    where: { id: threadId },
+  });
+};
+
+export const updateThread = async (thread: {
+  threadId: string;
+  name: string;
+}): Promise<Thread> => {
+  const updatedPrismaThread = await prisma.thread.update({
+    where: { id: thread.threadId },
+    data: { name: thread.name },
+  });
+
+  return {
+    threadId: updatedPrismaThread.id,
+    title: updatedPrismaThread.name,
+    createdAt: updatedPrismaThread.createdAt,
+  };
+};
