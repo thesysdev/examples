@@ -1,0 +1,22 @@
+{
+  "name": "artifacts-cli",
+  "version": "1.0.0",
+  "description": "CLI for generating reports and slides via Thesys MCP API",
+  "main": "thesys-mcp-api-call.js",
+  "bin": {
+    "artifacts-cli": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js",
+    "test": "node thesys-mcp-api-call.test.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "cli.js",
+    "thesys-mcp-api-call.js"
+  ],
+  "author": "",
+  "license": "ISC"
+}
