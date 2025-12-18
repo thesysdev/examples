@@ -1,6 +1,8 @@
 import OpenAI from "openai";
-import { makeC1Response } from "@thesysai/genui-sdk/server";
 import { nanoid } from "nanoid";
+
+// Type for the artifact writer function
+type ArtifactWriter = (content: string) => void;
 
 /**
  * Creates a new artifact (presentation or report) using the C1 Artifacts API
@@ -9,29 +11,34 @@ export async function handleCreateArtifact(
   instructions: string,
   artifactType: "slides" | "report",
   artifactsClient: OpenAI,
-  c1Response: ReturnType<typeof makeC1Response>,
+  writeArtifact: ArtifactWriter,
   messageId: string
 ): Promise<string> {
   const artifactId = nanoid(10);
 
-  const artifactStream = await artifactsClient.chat.completions.create({
-    model: "c1/artifact/v-20251030",
-    messages: [{ role: "user", content: instructions }],
-    metadata: {
-      thesys: JSON.stringify({
-        c1_artifact_type: artifactType,
-        id: artifactId,
-      }),
-    },
-    stream: true,
-  });
+  try {
+    const artifactStream = await artifactsClient.chat.completions.create({
+      model: "c1/artifact/v-20251030",
+      messages: [{ role: "user", content: instructions }],
+      metadata: {
+        thesys: JSON.stringify({
+          c1_artifact_type: artifactType,
+          id: artifactId,
+        }),
+      },
+      stream: true,
+    });
 
-  // Stream artifact content to the response
-  for await (const delta of artifactStream) {
-    const content = delta.choices[0]?.delta?.content;
-    if (content) {
-      c1Response.writeContent(content);
+    // Stream artifact content
+    for await (const delta of artifactStream) {
+      const content = delta.choices[0]?.delta?.content;
+      if (content) {
+        writeArtifact(content);
+      }
     }
+  } catch (error) {
+    console.error("Error streaming artifact:", error);
+    writeArtifact("\n\n[Error creating artifact]");
   }
 
   return `${
@@ -48,7 +55,7 @@ export async function handleEditArtifact(
   instructions: string,
   getMessageContent: (version: string) => Promise<string | null>,
   artifactsClient: OpenAI,
-  c1Response: ReturnType<typeof makeC1Response>,
+  writeArtifact: ArtifactWriter,
   newMessageId: string
 ): Promise<string> {
   // Get the previous artifact content
@@ -63,28 +70,32 @@ export async function handleEditArtifact(
     ? "report"
     : "slides";
 
-  // Call C1 Artifacts API in edit mode (previous content + new instructions)
-  const artifactStream = await artifactsClient.chat.completions.create({
-    model: "c1/artifact/v-20251030",
-    messages: [
-      { role: "assistant", content: messageContent },
-      { role: "user", content: instructions },
-    ],
-    metadata: {
-      thesys: JSON.stringify({
-        c1_artifact_type: artifactType,
-        id: artifactId,
-      }),
-    },
-    stream: true,
-  });
+  try {
+    const artifactStream = await artifactsClient.chat.completions.create({
+      model: "c1/artifact/v-20251030",
+      messages: [
+        { role: "assistant", content: messageContent },
+        { role: "user", content: instructions },
+      ],
+      metadata: {
+        thesys: JSON.stringify({
+          c1_artifact_type: artifactType,
+          id: artifactId,
+        }),
+      },
+      stream: true,
+    });
 
-  // Stream updated artifact content
-  for await (const delta of artifactStream) {
-    const content = delta.choices[0]?.delta?.content;
-    if (content) {
-      c1Response.writeContent(content);
+    // Stream updated artifact content
+    for await (const delta of artifactStream) {
+      const content = delta.choices[0]?.delta?.content;
+      if (content) {
+        writeArtifact(content);
+      }
     }
+  } catch (error) {
+    console.error("Error streaming artifact:", error);
+    writeArtifact("\n\n[Error editing artifact]");
   }
 
   return `${

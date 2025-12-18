@@ -8,7 +8,55 @@ import "@crayonai/react-ui/styles/index.css";
 interface Message {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  textContent: string; // Plain text for chat display
+  artifactContent: string; // C1 markup for artifact rendering
+}
+
+// Parse SSE events from a chunk of text
+function parseSSEEvents(buffer: string): {
+  events: Array<{ type: string; content: string }>;
+  remaining: string;
+} {
+  const events: Array<{ type: string; content: string }> = [];
+  const lines = buffer.split("\n");
+  let currentEvent: { type: string; data: string } | null = null;
+  let remaining = "";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check if this might be an incomplete event at the end
+    if (i === lines.length - 1 && line !== "") {
+      remaining = line;
+      break;
+    }
+
+    if (line.startsWith("event: ")) {
+      currentEvent = { type: line.slice(7), data: "" };
+    } else if (line.startsWith("data: ") && currentEvent) {
+      currentEvent.data = line.slice(6);
+    } else if (line === "" && currentEvent && currentEvent.data) {
+      // End of event - parse the data
+      try {
+        const parsed = JSON.parse(currentEvent.data);
+        events.push({ type: currentEvent.type, content: parsed.content });
+      } catch {
+        // Skip malformed events
+      }
+      currentEvent = null;
+    }
+  }
+
+  // If we have an incomplete event, add it to remaining
+  if (currentEvent) {
+    if (currentEvent.data) {
+      remaining = `event: ${currentEvent.type}\ndata: ${currentEvent.data}`;
+    } else {
+      remaining = `event: ${currentEvent.type}`;
+    }
+  }
+
+  return { events, remaining };
 }
 
 function ChatApp() {
@@ -68,7 +116,8 @@ function ChatApp() {
     const userMessage: Message = {
       id: nanoid(),
       role: "user",
-      content: input.trim(),
+      textContent: input.trim(),
+      artifactContent: "",
     };
 
     const responseId = nanoid();
@@ -84,7 +133,11 @@ function ChatApp() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: userMessage,
+          prompt: {
+            id: userMessage.id,
+            role: "user",
+            content: userMessage.textContent,
+          },
           threadId,
           responseId,
         }),
@@ -97,31 +150,73 @@ function ChatApp() {
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let accumulated = "";
+      let buffer = "";
+      let accumulatedText = "";
+      let accumulatedArtifact = "";
 
       // Add placeholder for assistant message
       setMessages((prev) => [
         ...prev,
-        { id: responseId, role: "assistant", content: "" },
+        {
+          id: responseId,
+          role: "assistant",
+          textContent: "",
+          artifactContent: "",
+        },
       ]);
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        accumulated += decoder.decode(value, { stream: true });
+
+        buffer += decoder.decode(value, { stream: true });
+        const { events, remaining } = parseSSEEvents(buffer);
+        buffer = remaining;
+
+        for (const event of events) {
+          if (event.type === "text") {
+            accumulatedText += event.content;
+          } else if (event.type === "artifact") {
+            accumulatedArtifact += event.content;
+          }
+        }
+
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === responseId ? { ...m, content: accumulated } : m
+            m.id === responseId
+              ? {
+                  ...m,
+                  textContent: accumulatedText,
+                  artifactContent: accumulatedArtifact,
+                }
+              : m
           )
         );
       }
 
-      accumulated += decoder.decode();
-      setMessages((prev) =>
-        prev.map((m) =>
-          m.id === responseId ? { ...m, content: accumulated } : m
-        )
-      );
+      // Process any remaining buffer
+      buffer += decoder.decode();
+      if (buffer) {
+        const { events } = parseSSEEvents(buffer + "\n\n");
+        for (const event of events) {
+          if (event.type === "text") {
+            accumulatedText += event.content;
+          } else if (event.type === "artifact") {
+            accumulatedArtifact += event.content;
+          }
+        }
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === responseId
+              ? {
+                  ...m,
+                  textContent: accumulatedText,
+                  artifactContent: accumulatedArtifact,
+                }
+              : m
+          )
+        );
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
         // Request was cancelled
@@ -132,7 +227,8 @@ function ChatApp() {
           {
             id: responseId,
             role: "assistant",
-            content: "Sorry, something went wrong. Please try again.",
+            textContent: "Sorry, something went wrong. Please try again.",
+            artifactContent: "",
           },
         ]);
       }
@@ -223,15 +319,26 @@ function ChatApp() {
                   }`}
                 >
                   {message.role === "assistant" ? (
-                    <C1Component
-                      c1Response={message.content}
-                      isStreaming={
-                        isLoading &&
-                        messages[messages.length - 1]?.id === message.id
-                      }
-                    />
+                    <>
+                      {/* Display plain text in chat */}
+                      {message.textContent && (
+                        <p className="whitespace-pre-wrap">
+                          {message.textContent}
+                        </p>
+                      )}
+                      {/* C1Component to process artifact and enable useArtifact hooks */}
+                      {message.artifactContent && (
+                        <C1Component
+                          c1Response={message.artifactContent}
+                          isStreaming={
+                            isLoading &&
+                            messages[messages.length - 1]?.id === message.id
+                          }
+                        />
+                      )}
+                    </>
                   ) : (
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <p className="whitespace-pre-wrap">{message.textContent}</p>
                   )}
                 </div>
               </div>
