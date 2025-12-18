@@ -4,10 +4,14 @@ export interface StoredMessage {
   id: string;
   role: "system" | "user" | "assistant" | "tool";
   content: string;
+  artifactContent?: string; // C1 artifact markup stored separately
 }
 
 // In-memory message store (use a database in production)
 export const messageStore = new Map<ThreadId, StoredMessage[]>();
+
+// Map from messageId to artifact content for quick lookup during edits
+const artifactStore = new Map<string, string>();
 
 export function getMessages(threadId: ThreadId): StoredMessage[] {
   return messageStore.get(threadId) || [];
@@ -18,6 +22,14 @@ export function addMessages(
   ...messages: StoredMessage[]
 ): void {
   const existing = messageStore.get(threadId) || [];
+
+  // Also store artifact content in the lookup map
+  for (const msg of messages) {
+    if (msg.artifactContent) {
+      artifactStore.set(msg.id, msg.artifactContent);
+    }
+  }
+
   messageStore.set(threadId, [...existing, ...messages]);
 }
 
@@ -28,6 +40,10 @@ export function getMessageContent(
   const messages = messageStore.get(threadId) || [];
   const message = messages.find((m) => m.id === messageId);
   return message?.content || null;
+}
+
+export function getArtifactContent(messageId: string): string | null {
+  return artifactStore.get(messageId) || null;
 }
 
 export function initThread(threadId: ThreadId, systemPrompt: string): void {

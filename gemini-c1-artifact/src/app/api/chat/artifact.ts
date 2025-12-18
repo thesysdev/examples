@@ -15,7 +15,10 @@ export async function handleCreateArtifact(
   messageId: string
 ): Promise<string> {
   const artifactId = nanoid(10);
-
+  const message = `${
+    artifactType === "slides" ? "Presentation" : "Report"
+  } created successfully with artifact_id: ${artifactId}, version: ${messageId}`;
+  console.log(message);
   try {
     const artifactStream = await artifactsClient.chat.completions.create({
       model: "c1/artifact/v-20251030",
@@ -41,9 +44,7 @@ export async function handleCreateArtifact(
     writeArtifact("\n\n[Error creating artifact]");
   }
 
-  return `${
-    artifactType === "slides" ? "Presentation" : "Report"
-  } created successfully with artifact_id: ${artifactId}, version: ${messageId}`;
+  return message;
 }
 
 /**

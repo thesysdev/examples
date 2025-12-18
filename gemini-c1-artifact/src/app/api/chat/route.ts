@@ -5,7 +5,7 @@ import { toolDeclarations } from "./tools";
 import { handleCreateArtifact, handleEditArtifact } from "./artifact";
 import {
   addMessages,
-  getMessageContent,
+  getArtifactContent,
   getMessages,
   initThread,
   StoredMessage,
@@ -94,20 +94,29 @@ export async function POST(req: NextRequest) {
   // Create custom SSE stream
   const sse = createSSEStream();
 
-  // Get conversation history for context
-  const history = getMessages(threadId);
-  const conversationHistory = history
-    .filter((m) => m.role !== "system")
-    .map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+  // Store user message SYNCHRONOUSLY before processing
+  // This ensures it's available for subsequent requests
+  addMessages(threadId, prompt);
 
-  // Add current user message
-  conversationHistory.push({
-    role: "user",
-    parts: [{ text: prompt.content }],
-  });
+  // Build conversation history from server-side storage (includes artifact data)
+  const history = getMessages(threadId);
+  const conversationHistory: Array<{
+    role: string;
+    parts: Array<{ text: string }>;
+  }> = history
+    .filter((m) => m.role !== "system" && m.role !== "tool") // Skip system and tool messages
+    .map((m) => {
+      // For assistant messages, combine text and artifact content
+      const fullContent = m.artifactContent
+        ? `${m.content}\n\n${m.artifactContent}`
+        : m.content;
+      return {
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: fullContent }],
+      };
+    });
+
+  console.log(JSON.stringify(conversationHistory, null, 2));
 
   // Start streaming in background - don't await!
   (async () => {
@@ -127,7 +136,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const messagesToStore: StoredMessage[] = [prompt];
       let functionCalls: any[] = [];
 
       // Stream the response chunks
@@ -144,46 +152,63 @@ export async function POST(req: NextRequest) {
       }
 
       // Handle function calls after streaming text
+      const toolCallResults: string[] = [];
       if (functionCalls.length > 0) {
         for (const functionCall of functionCalls) {
           const args = functionCall.args as Record<string, string>;
 
           if (functionCall.name === "create_artifact") {
-            await handleCreateArtifact(
+            const result = await handleCreateArtifact(
               args.instructions,
               args.artifactType as "slides" | "report",
               artifactsClient,
               sse.writeArtifact,
               responseId
             );
+            toolCallResults.push(
+              `Tool: create_artifact\nArgs: ${JSON.stringify(
+                args
+              )}\nResult: ${result}`
+            );
           } else if (functionCall.name === "edit_artifact") {
-            await handleEditArtifact(
+            const result = await handleEditArtifact(
               args.artifactId,
               args.version,
               args.instructions,
-              (version) =>
-                Promise.resolve(getMessageContent(threadId, version)),
+              (version) => {
+                // Look up artifact content from server-side storage
+                return Promise.resolve(getArtifactContent(version));
+              },
               artifactsClient,
               sse.writeArtifact,
               responseId
+            );
+            toolCallResults.push(
+              `Tool: edit_artifact\nArgs: ${JSON.stringify(
+                args
+              )}\nResult: ${result}`
             );
           }
         }
       }
 
-      // Store messages after all streaming is done
-      // Combine text and artifact content for storage
-      const fullContent = sse.getAccumulatedArtifact()
-        ? `${sse.getAccumulatedText()}\n\n${sse.getAccumulatedArtifact()}`
-        : sse.getAccumulatedText();
+      // Store assistant message after streaming is done
+      // Include tool results in the assistant message content so the model knows what it did
+      let textContent = sse.getAccumulatedText();
+      if (toolCallResults.length > 0) {
+        textContent = textContent
+          ? `${textContent}\n\n[Tool Results]\n${toolCallResults.join("\n\n")}`
+          : `[Tool Results]\n${toolCallResults.join("\n\n")}`;
+      }
 
       const assistantMessage: StoredMessage = {
         id: responseId,
         role: "assistant",
-        content: fullContent,
+        content: textContent,
+        artifactContent: sse.getAccumulatedArtifact() || undefined,
       };
-      messagesToStore.push(assistantMessage);
-      addMessages(threadId, ...messagesToStore);
+
+      addMessages(threadId, assistantMessage);
 
       // End the response after everything completes
       await sse.end();
