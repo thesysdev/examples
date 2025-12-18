@@ -1,11 +1,29 @@
+/**
+ * Artifact generation handlers for the C1 Artifacts API.
+ *
+ * This module provides functions to create and edit artifacts (presentations
+ * and reports) using the Thesys C1 API via an OpenAI-compatible client.
+ */
+
 import OpenAI from "openai";
 import { nanoid } from "nanoid";
+import { C1_ARTIFACT_MODEL } from "./constants";
 
-// Type for the artifact writer function
+/** Callback function for streaming artifact content chunks */
 type ArtifactWriter = (content: string) => void;
 
 /**
- * Creates a new artifact (presentation or report) using the C1 Artifacts API
+ * Creates a new artifact (presentation or report) using the C1 Artifacts API.
+ *
+ * Streams the generated artifact content through the provided writer callback,
+ * allowing real-time rendering as the artifact is being generated.
+ *
+ * @param instructions - Detailed instructions for generating the artifact content
+ * @param artifactType - The type of artifact: "slides" for presentations, "report" for documents
+ * @param artifactsClient - OpenAI client configured for the C1 Artifacts API
+ * @param writeArtifact - Callback to stream artifact content chunks to the client
+ * @param messageId - The message ID to associate with this artifact version
+ * @returns A message confirming creation with artifact ID and version
  */
 export async function handleCreateArtifact(
   instructions: string,
@@ -15,13 +33,13 @@ export async function handleCreateArtifact(
   messageId: string
 ): Promise<string> {
   const artifactId = nanoid(10);
-  const message = `${
+  const successMessage = `${
     artifactType === "slides" ? "Presentation" : "Report"
   } created successfully with artifact_id: ${artifactId}, version: ${messageId}`;
-  console.log(message);
+
   try {
     const artifactStream = await artifactsClient.chat.completions.create({
-      model: "c1/artifact/v-20251030",
+      model: C1_ARTIFACT_MODEL,
       messages: [{ role: "user", content: instructions }],
       metadata: {
         thesys: JSON.stringify({
@@ -32,7 +50,7 @@ export async function handleCreateArtifact(
       stream: true,
     });
 
-    // Stream artifact content
+    // Stream artifact content chunks to the client
     for await (const delta of artifactStream) {
       const content = delta.choices[0]?.delta?.content;
       if (content) {
@@ -44,11 +62,25 @@ export async function handleCreateArtifact(
     writeArtifact("\n\n[Error creating artifact]");
   }
 
-  return message;
+  return successMessage;
 }
 
 /**
- * Edits an existing artifact using the C1 Artifacts API
+ * Edits an existing artifact using the C1 Artifacts API.
+ *
+ * Retrieves the previous artifact content by version, then sends it along with
+ * edit instructions to generate an updated version. The artifact type is
+ * automatically detected from the existing content.
+ *
+ * @param artifactId - The ID of the artifact to edit
+ * @param version - The version (message ID) of the artifact to edit
+ * @param instructions - Instructions describing the desired changes
+ * @param getMessageContent - Function to retrieve the previous artifact content by version
+ * @param artifactsClient - OpenAI client configured for the C1 Artifacts API
+ * @param writeArtifact - Callback to stream updated artifact content chunks to the client
+ * @param newMessageId - The message ID to associate with this new artifact version
+ * @returns A message confirming the edit with artifact ID and new version
+ * @throws Error if the previous artifact content cannot be found
  */
 export async function handleEditArtifact(
   artifactId: string,
@@ -59,23 +91,23 @@ export async function handleEditArtifact(
   writeArtifact: ArtifactWriter,
   newMessageId: string
 ): Promise<string> {
-  // Get the previous artifact content
-  const messageContent = await getMessageContent(version);
+  // Retrieve the previous artifact content by version
+  const previousContent = await getMessageContent(version);
 
-  if (!messageContent) {
+  if (!previousContent) {
     throw new Error(`Could not find artifact with version: ${version}`);
   }
 
-  // Determine artifact type from the content
-  const artifactType = messageContent.includes('type="report"')
+  // Auto-detect artifact type from the content markup
+  const artifactType = previousContent.includes('type="report"')
     ? "report"
     : "slides";
 
   try {
     const artifactStream = await artifactsClient.chat.completions.create({
-      model: "c1/artifact/v-20251030",
+      model: C1_ARTIFACT_MODEL,
       messages: [
-        { role: "assistant", content: messageContent },
+        { role: "assistant", content: previousContent },
         { role: "user", content: instructions },
       ],
       metadata: {
@@ -87,7 +119,7 @@ export async function handleEditArtifact(
       stream: true,
     });
 
-    // Stream updated artifact content
+    // Stream updated artifact content chunks to the client
     for await (const delta of artifactStream) {
       const content = delta.choices[0]?.delta?.content;
       if (content) {

@@ -1,4 +1,4 @@
-import { GoogleGenAI, FunctionCallingConfigMode } from "@google/genai";
+import { GoogleGenAI, FunctionCallingConfigMode, Content } from "@google/genai";
 import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import { toolDeclarations } from "./tools";
@@ -9,14 +9,24 @@ import {
   getMessages,
   initThread,
   StoredMessage,
-  ThreadId,
 } from "./messageStore";
 import { systemPrompt } from "./systemPrompt";
+import { GEMINI_MODEL, C1_API_BASE_URL } from "./constants";
 
-// SSE event types
+/** SSE event types for streaming responses */
 type SSEEventType = "text" | "artifact";
 
-// Helper to create SSE stream with text and artifact event writers
+/**
+ * Creates a Server-Sent Events (SSE) stream with separate channels for text and artifacts.
+ *
+ * The stream uses the SSE protocol format:
+ * - `event: text` for chat text content
+ * - `event: artifact` for C1 artifact markup
+ *
+ * Each event contains JSON data: `{ content: string }`
+ *
+ * @returns An object with methods to write events and manage the stream
+ */
 function createSSEStream() {
   const encoder = new TextEncoder();
   let accumulatedText = "";
@@ -73,11 +83,24 @@ export async function POST(req: NextRequest) {
     return new Response("Missing THESYS_API_KEY", { status: 500 });
   }
 
-  const { prompt, threadId, responseId } = (await req.json()) as {
+  // Parse and validate request body
+  const body = await req.json();
+  const { prompt, threadId, responseId } = body as {
     prompt: { role: "user"; content: string; id: string };
-    threadId: ThreadId;
+    threadId: string;
     responseId: string;
   };
+
+  // Validate required fields
+  if (!prompt?.content || !prompt?.id || !threadId || !responseId) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "Missing required fields: prompt (with content and id), threadId, responseId",
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   // Initialize thread with system prompt if new
   initThread(threadId, systemPrompt);
@@ -88,22 +111,25 @@ export async function POST(req: NextRequest) {
   // Initialize OpenAI client for C1 Artifacts API
   const artifactsClient = new OpenAI({
     apiKey: thesysApiKey,
-    baseURL: "https://api.thesys.dev/v1/artifact",
+    baseURL: C1_API_BASE_URL,
   });
 
   // Create custom SSE stream
   const sse = createSSEStream();
 
-  // Store user message SYNCHRONOUSLY before processing
+  // Convert prompt to StoredMessage format and store synchronously
   // This ensures it's available for subsequent requests
-  addMessages(threadId, prompt);
+  const userMessage: StoredMessage = {
+    id: prompt.id,
+    role: "user",
+    content: prompt.content,
+  };
+  addMessages(threadId, userMessage);
 
   // Build conversation history from server-side storage (includes artifact data)
+  // Format as Gemini Content[] type for proper type safety
   const history = getMessages(threadId);
-  const conversationHistory: Array<{
-    role: string;
-    parts: Array<{ text: string }>;
-  }> = history
+  const conversationHistory: Content[] = history
     .filter((m) => m.role !== "system" && m.role !== "tool") // Skip system and tool messages
     .map((m) => {
       // For assistant messages, combine text and artifact content
@@ -116,15 +142,13 @@ export async function POST(req: NextRequest) {
       };
     });
 
-  console.log(JSON.stringify(conversationHistory, null, 2));
-
   // Start streaming in background - don't await!
   (async () => {
     try {
       // Call Gemini with streaming enabled
       const stream = await ai.models.generateContentStream({
-        model: "gemini-3-flash-preview",
-        contents: conversationHistory as any,
+        model: GEMINI_MODEL,
+        contents: conversationHistory,
         config: {
           systemInstruction: systemPrompt,
           tools: [{ functionDeclarations: toolDeclarations }],
