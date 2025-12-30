@@ -38,5 +38,6 @@ The backend is configured via `langgraph.json`, which points to the compiled gra
 ## API Documentation
 
 Once the server is running, you can access the interactive API documentation and the LangGraph Studio at:
+
 - http://localhost:2024/docs
 - http://localhost:2024 (LangGraph Studio)
