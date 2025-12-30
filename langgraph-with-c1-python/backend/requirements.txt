@@ -1,8 +1,4 @@
-fastapi
-uvicorn[standard]
-langchain-openai
-langgraph
-python-dotenv
-pydantic
-sse-starlette
-langchain-core
+langchain-openai==1.1.6
+langgraph==1.0.4
+langgraph-cli[inmem]==0.4.7
+
