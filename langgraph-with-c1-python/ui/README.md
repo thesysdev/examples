@@ -1,28 +1,30 @@
-# Getting Started with Create React App
+# LangGraph + Thesys C1 SDK UI
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is a React frontend built with Vite that demonstrates how to use the Thesys C1 SDK with a LangGraph backend.
 
-## Available Scripts
+## Setup
 
-In the project directory, you can run:
+1. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-### `pnpm install`
+2. **Run the app:**
+   ```bash
+   pnpm dev
+   ```
+   Open [http://localhost:4000](http://localhost:4000) to view it in the browser.
 
-Installs the dependencies.
+## Features
 
-### `pnpm dev`
+- **Multi-turn Chat:** Persistent chat threads using LangGraph state management.
+- **Streaming:** Real-time streaming of agent responses.
+- **Tool Usage:** Visual feedback for tool execution within the chat.
+- **Thread Management:** Create, list, rename, and delete chat threads.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+## Configuration
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+The frontend is configured to proxy API requests to the LangGraph server (defaulting to `http://localhost:2024`). You can adjust this in `vite.config.ts`.
 
-
-### `pnpm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- `src/App.tsx`: Main application component using the `C1Chat` component and SDK hooks.
+- `src/client.ts`: API client for communicating with the LangGraph server.
