@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { NextRequest } from "next/server";
 import { makeC1Response } from "@thesysai/genui-sdk/server";
 import { transformStream } from "@crayonai/stream";
+import { saveVersion } from "../../../lib/versionStore";
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.THESYS_API_KEY;
@@ -9,15 +10,20 @@ export async function POST(req: NextRequest) {
     return new Response("Missing THESYS_API_KEY", { status: 500 });
   }
 
-  const { prompt, artifactType, artifactId, artifactContent } = (await req.json()) as {
-    prompt?: string;
-    artifactType?: "slides" | "report";
-    artifactId?: string;
-    artifactContent?: string;
-  };
+  const { prompt, artifactType, artifactId, artifactContent } =
+    (await req.json()) as {
+      prompt?: string;
+      artifactType?: "slides" | "report";
+      artifactId?: string;
+      artifactContent?: string;
+    };
 
   if (!prompt || typeof prompt !== "string") {
     return new Response("Missing 'prompt'", { status: 400 });
+  }
+
+  if (!artifactId) {
+    return new Response("Missing 'artifactId'", { status: 400 });
   }
 
   const client = new OpenAI({
@@ -29,9 +35,12 @@ export async function POST(req: NextRequest) {
     role: "system" | "user" | "assistant";
     content: string;
   }> = [];
-  
+
   // Include previous artifact content if editing
-  if (typeof artifactContent === "string" && artifactContent.trim().length > 0) {
+  if (
+    typeof artifactContent === "string" &&
+    artifactContent.trim().length > 0
+  ) {
     messages.push({ role: "assistant", content: artifactContent });
   }
   messages.push({ role: "user", content: prompt });
@@ -47,7 +56,7 @@ export async function POST(req: NextRequest) {
         id: artifactId,
         c1_artifact_type: artifactType,
       }),
-    }
+    },
   });
 
   const c1Response = makeC1Response();
@@ -57,11 +66,15 @@ export async function POST(req: NextRequest) {
     isAborted = true;
   });
 
+  // Accumulate content to save as a version
+  let accumulatedContent = "";
+
   transformStream(
     stream,
     (chunk) => {
       const content = chunk.choices?.[0]?.delta?.content;
       if (content) {
+        accumulatedContent += content;
         c1Response.writeContent(content);
       }
     },
@@ -74,8 +87,12 @@ export async function POST(req: NextRequest) {
           return;
         }
         c1Response.end();
-        // if you want to store the response just call
-        //  c1Response.getAssistantMessage() to get the assistant message
+
+        // Save the completed artifact as a new version
+        if (accumulatedContent) {
+          const version = saveVersion(artifactId, accumulatedContent, prompt);
+          console.log(`Saved version ${version.id} for artifact ${artifactId}`);
+        }
       },
     }
   );
@@ -84,6 +101,7 @@ export async function POST(req: NextRequest) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache",
+      "X-Artifact-Id": artifactId,
     },
   });
 }
