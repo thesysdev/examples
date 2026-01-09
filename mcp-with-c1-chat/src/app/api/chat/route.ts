@@ -20,7 +20,11 @@ interface RequestBody {
  */
 async function ensureMCPConnection(): Promise<void> {
   if (mcpClient.tools.length === 0) {
-    await mcpClient.connect();
+    const serverUrl = process.env.MCP_SERVER_URL;
+    if (!serverUrl) {
+      throw new Error("MCP_SERVER_URL environment variable is required");
+    }
+    await mcpClient.connect(serverUrl);
   }
 }
 
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
 
     const llmStream = await client.beta.chat.completions.runTools({
-      model: "c1/anthropic/claude-3.5-sonnet/v-20250617", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
+      model: "c1/anthropic/claude-sonnet-4/v-20250930", // available models: https://docs.thesys.dev/guides/models-pricing#model-table
       messages: messages,
       tools: mcpClient.tools.map((tool) => ({
         type: "function",
