@@ -1,0 +1,42 @@
+{
+  "name": "c1-vizualize-ecommerce-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma:studio": "prisma studio",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prepare": "npm run prisma:migrate && npm run prisma:generate"
+  },
+  "dependencies": {
+    "@crayonai/react-core": "^0.7.6",
+    "@crayonai/react-ui": "^0.8.43",
+    "@crayonai/stream": "^0.6.4",
+    "@modelcontextprotocol/sdk": "^1.24.3",
+    "@prisma/client": "^6.6.0",
+    "@thesysai/genui-sdk": "^0.6.40",
+    "next": "15.3.0",
+    "openai": "^4.95.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-ui": "1.0.0-beta.32",
+    "zod": "^3.24.2",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.0",
+    "prisma": "^6.6.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
