@@ -1,68 +1,55 @@
 import os
-from typing import Annotated, List, TypedDict
-
-# Use AnyMessage for broader compatibility, AIMessage for checking tool calls
-from langchain_core.messages import AnyMessage, AIMessage 
+from typing import Annotated, TypedDict, Literal
+from langchain_core.messages import AnyMessage, AIMessage, HumanMessage
 from langchain_openai import ChatOpenAI
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import ToolNode
 from dotenv import load_dotenv
 from tools import runnable_tools
-# Use the built-in add_messages reducer for standard append/update logic
 from langgraph.graph.message import add_messages
 
 load_dotenv()
 
 class AgentState(TypedDict):
-    messages: Annotated[List[AnyMessage], add_messages]
-    # Store response_id to potentially assign it to the AIMessage
-    response_id: str 
+    messages: Annotated[list[AnyMessage], add_messages]
+    response_id: str
 
-# Initialize model and bind tools in one step
+# Initialize model with TheSys endpoint
 model = ChatOpenAI(
-    model="c1/anthropic/claude-3.5-sonnet/v-20250617", # available models: https://docs.thesys.dev/guides/models-pricing#model-table
-    temperature=0,
+    model="c1/anthropic/claude-sonnet-4/v-20251130",
     base_url="https://api.thesys.dev/v1/embed",
     api_key=os.getenv("THESYS_API_KEY"),
 ).bind_tools(runnable_tools)
 
-# Tool execution node
+# Use prebuilt ToolNode (handles tool execution automatically)
 tool_node = ToolNode(runnable_tools)
 
-async def call_model(state: AgentState):
-    """Invokes the agent model with the current state messages."""
+async def call_model(state: AgentState) -> dict:
+    """Call the model and assign response_id to final AI responses."""
     messages = state["messages"]
     response = await model.ainvoke(messages)
-    # If it's a standard AI response (not a tool call), assign the response_id
+    
+    # Assign response_id to final responses (no tool calls)
     if isinstance(response, AIMessage) and not response.tool_calls:
         response.id = state["response_id"]
+    
     return {"messages": [response]}
 
-def should_continue(state: AgentState):
-    """Routes to tools if the last message is an AIMessage with tool_calls."""
+def should_continue(state: AgentState) -> Literal["tools", END]:
+    """Route to tools if last message has tool calls."""
     last_message = state["messages"][-1]
     if isinstance(last_message, AIMessage) and last_message.tool_calls:
         return "tools"
     return END
 
+# Build the graph
 workflow = StateGraph(AgentState)
-
 workflow.add_node("agent", call_model)
 workflow.add_node("tools", tool_node)
 
 workflow.set_entry_point("agent")
-
-workflow.add_conditional_edges(
-    "agent",
-    should_continue,
-    {
-        "tools": "tools",
-        END: END,
-    },
-)
-
+workflow.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
 workflow.add_edge("tools", "agent")
 
-memory = MemorySaver()
-app = workflow.compile(checkpointer=memory) 
+# Compile the graph
+app = workflow.compile()
