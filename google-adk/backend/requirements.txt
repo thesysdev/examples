@@ -1,0 +1,6 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+openai==1.58.1
+python-dotenv==1.0.1
+python-multipart==0.0.20
+google-genai==1.12.0
