@@ -38,6 +38,12 @@ const SYSTEM_PROMPT = `You are a friendly and helpful e-commerce assistant speci
 *   Inform users that the only payment method available is **Cash on Delivery**.
 *   Your final response is processed by another assistant to generate a user interface (e.g., product lists, forms). Structure your responses clearly for this purpose.
 *   If user asks for output in a specific component for example a graph, table, etc, try your best to generate the output in the requested format, so that the other assistant can use it to generate the UI.
+
+**Visualizer Agent:**
+Your outputs will be processed by a downstream visualizer agent to generate a user interface.
+The visualizer agent is responsible for generating a user interface based on your output but it does not have access to the tool calls
+or the database so it cannot add any additional information to the output that you dont provide.
+In your response, you should provide enough information with possible actions like buttons to select products, forms to add to cart, links to navigate to other pages, etc that the user can take to interact with the UI.
 `;
 
 export async function POST(req: NextRequest) {
@@ -52,7 +58,7 @@ export async function POST(req: NextRequest) {
   const previousAiMessages = await getAIThreadMessages(threadId);
   // Use the runTools helper for standard OpenAI call to handle tool logic
   const runner = openai.beta.chat.completions.runTools({
-    model: "gpt-4.1",
+    model: "gpt-5.2",
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
       ...previousAiMessages,
@@ -110,7 +116,7 @@ export async function POST(req: NextRequest) {
 
   // --- Step 4: Call Thesys  API and Stream to Client ---
   const thesysStreamRunner = thesysClient.beta.chat.completions.runTools({
-    model: "c1/anthropic/claude-sonnet-4/v-20250915",
+    model: "c1/anthropic/claude-sonnet-4/v-20251230",
     messages: [
       ...previousAiMessages,
       { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
