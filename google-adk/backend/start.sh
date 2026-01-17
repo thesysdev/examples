@@ -11,15 +11,6 @@ if [ ! -d "venv" ]; then
     exit 1
 fi
 
-# Check if .env exists
-if [ ! -f ".env" ]; then
-    echo ".env file not found!"
-    echo "Creating .env from env.example..."
-    cp env.example .env
-    echo "Created .env file - please edit it with your THESYS_API_KEY"
-    exit 1
-fi
-
 # Activate virtual environment
 echo "Activating virtual environment..."
 source venv/bin/activate

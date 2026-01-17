@@ -1,6 +1,6 @@
-# Google ADK Python + C1Chat Quickstart
+# Google ADK + C1Chat Example
 
-A quickstart project demonstrating Google ADK's Python agent framework integrated with C1Chat for a modern conversational AI interface. This project showcases how to build a full-stack chat application using Python ADK, FastAPI, and React.
+A full-stack chat application demonstrating Google's Agent Development Kit (ADK) integrated with C1Chat for a modern conversational AI interface. This project showcases how to use Google ADK's agentic framework with FastAPI and React.
 
 ## Architecture
 
@@ -13,17 +13,17 @@ A quickstart project demonstrating Google ADK's Python agent framework integrate
            │
 ┌──────────▼──────────┐
 │  FastAPI Server     │
-│  Python ADK Router  │
+│  Streaming Router   │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
 │  Assistant Agent    │
-│  Python ADK Agent   │
+│  Google ADK Agent   │
 └──────────┬──────────┘
            │
 ┌──────────▼──────────┐
-│   Thesys API        │
-│ OpenAI GPT-4 + C1   │
+│   Google GenAI      │
+│ Gemini 2.0 Flash    │
 └─────────────────────┘
 ```
 
@@ -55,12 +55,13 @@ google-adk/
 
 ## Features
 
-- **Python ADK Agent Framework**: Leverages Google ADK's agent system for conversational AI
+- **Google ADK Agent Framework**: Uses Google's ADK for agent orchestration, tools, and session management
+- **OpenAI via LiteLLM**: Connects to OpenAI (or compatible APIs like Thesys) through ADK's LiteLLM wrapper
+- **Model Agnostic**: Switch between OpenAI, Anthropic, or other providers without changing agent code
 - **FastAPI Backend**: High-performance async Python web server with streaming support
 - **C1Chat Interface**: Modern, rich chat UI with support for custom components
-- **OpenAI via Thesys**: Uses Thesys API for C1-enhanced responses with forms, tables, and custom UI
 - **Real-time Streaming**: Server-sent events for responsive chat experience
-- **Thread Management**: Conversation history maintained per thread
+- **ADK Session Management**: Built-in conversation history and state management via ADK
 - **CORS Enabled**: Ready for local development with separate frontend/backend
 
 ## Getting Started
@@ -69,7 +70,8 @@ google-adk/
 
 - **Python 3.10+** - [Download Python](https://www.python.org/downloads/)
 - **Node.js 18+** - [Download Node.js](https://nodejs.org/)
-- **Thesys API Key** - Get your API key from [Thesys Dashboard](https://console.thesys.dev/)
+- **OpenAI API Key** - Get from [OpenAI Platform](https://platform.openai.com/)
+  - OR **Thesys API Key** - Get from [Thesys Dashboard](https://console.thesys.dev/) (OpenAI-compatible with C1)
 
 ### Installation
 
@@ -99,7 +101,7 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp env.example .env
-# Edit .env and add your THESYS_API_KEY
+# Edit .env and add your OPENAI_API_KEY (or THESYS_API_KEY for Thesys)
 ```
 
 #### 3. Frontend Setup
@@ -163,14 +165,28 @@ You should see the C1Chat interface ready to use!
 
 Edit `backend/.env`:
 
+**Option 1: Using OpenAI directly:**
 ```bash
-# Required: Your Thesys API key
-THESYS_API_KEY=your_thesys_api_key_here
-
-# Optional: Server port (default: 8000)
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_MODEL=openai/gpt-4o
 PORT=8000
+FRONTEND_URL=http://localhost:5173
+```
 
-# Optional: Frontend URL for CORS (default: http://localhost:5173)
+**Option 2: Using Thesys API (OpenAI-compatible with C1 components):**
+```bash
+OPENAI_API_KEY=your_thesys_api_key_here
+OPENAI_BASE_URL=https://api.thesys.dev/v1/embed/
+OPENAI_MODEL=openai/c1/anthropic/claude-sonnet-4/v-20251130
+PORT=8000
+FRONTEND_URL=http://localhost:5173
+```
+
+**Option 3: Using alternative naming (auto-mapped):**
+```bash
+THESYS_API_KEY=your_thesys_api_key_here
+THESYS_BASE_URL=https://api.thesys.dev/v1/embed/
+PORT=8000
 FRONTEND_URL=http://localhost:5173
 ```
 
@@ -185,14 +201,21 @@ VITE_API_URL=http://localhost:8000/api/chat
 
 ## Key Concepts
 
-### Python ADK Agent
+### Google ADK with OpenAI
 
-The `AssistantAgent` class in `backend/agents/assistant.py` demonstrates:
+The `AssistantAgent` class in `backend/agents/assistant.py` demonstrates the hybrid approach:
 
-- Configuring OpenAI client with Thesys API base URL
-- Managing conversation threads and message history
-- Streaming responses asynchronously
-- Error handling and logging
+- **Google ADK Framework**: Uses `LlmAgent`, `Runner`, and `InMemorySessionService` from ADK
+- **LiteLLM Integration**: Connects OpenAI models through ADK's `LiteLlm` wrapper
+- **Model Format**: Uses `"openai/model-name"` format for LiteLLM
+- **Session Management**: ADK handles conversation state automatically
+- **Fallback Mode**: Automatically falls back to direct OpenAI client if ADK not available
+
+**Key Benefits:**
+- Use ADK's tools, orchestration, and session management
+- Keep your preferred model provider (OpenAI, Thesys, etc.)
+- Switch models without changing agent code
+- Add ADK tools and capabilities easily
 
 ### FastAPI Integration
 
@@ -273,16 +296,17 @@ curl http://localhost:8000/api/threads/test-thread-123
 
 ### Adding Tools to the Agent
 
-Edit `backend/agents/assistant.py` to add function calling:
+Edit `backend/agents/assistant.py` to add ADK tools:
 
 ```python
-# Add tools parameter to OpenAI call
-stream = await self.client.chat.completions.create(
-    model=self.model,
-    messages=messages,
-    stream=True,
-    tools=[...],  # Add your tools here
-    tool_choice="auto"
+from google.adk.tools.google_search_tool import GoogleSearchTool
+
+# In __init__, add tools to the agent
+self.agent = LlmAgent(
+    model=model,
+    name="c1chat_assistant",
+    instruction=SYSTEM_PROMPT,
+    tools=[GoogleSearchTool(bypass_multi_tools_limit=True)]  # Add your tools
 )
 ```
 
@@ -338,10 +362,11 @@ MIT License - feel free to use this as a starting point for your projects!
 
 ### Chat not working
 
-- Verify `THESYS_API_KEY` is set in backend `.env`
+- Verify `OPENAI_API_KEY` (or `THESYS_API_KEY`) is set in backend `.env`
 - Check backend logs for errors
 - Open browser console for frontend errors
 - Test the API directly with curl
+- If using Thesys, verify `OPENAI_BASE_URL` is set correctly
 
 ### Dependencies issues
 

@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 import uvicorn
-import json
 
 from agents.assistant import assistant_agent
 from config import PORT, FRONTEND_URL
@@ -81,52 +80,19 @@ async def chat(request: ChatRequest):
         # Extract user message
         user_message = request.prompt.content
         thread_id = request.threadId
-
-        # Create async generator for streaming response
-        async def generate_stream():
-            """Generate streaming response chunks"""
-            try:
-                async for chunk in assistant_agent.process_message(
-                    thread_id, user_message
-                ):
-                    # Yield chunks in the format expected by C1Chat
-                    yield chunk
-
-            except Exception as e:
-                error_msg = f"Error in stream: {str(e)}"
-                print(f"Stream error: {error_msg}")
-                yield error_msg
-
         # Return streaming response
         return StreamingResponse(
-            generate_stream(),
+            assistant_agent.process_message(thread_id, user_message),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache, no-transform",
                 "Connection": "keep-alive",
-                "X-Accel-Buffering": "no",
             },
         )
 
     except Exception as e:
         print(f"Chat endpoint error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/threads/{thread_id}")
-async def get_thread(thread_id: str):
-    """
-    Get conversation history for a thread (optional endpoint for debugging).
-
-    Args:
-        thread_id: Thread identifier
-
-    Returns:
-        Thread message history
-    """
-    if thread_id in assistant_agent.threads:
-        return {"thread_id": thread_id, "messages": assistant_agent.threads[thread_id]}
-    return {"thread_id": thread_id, "messages": []}
 
 
 if __name__ == "__main__":
