@@ -1,0 +1,1 @@
+"""Minimal ChatKit backend package."""
