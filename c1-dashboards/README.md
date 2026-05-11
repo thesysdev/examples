@@ -2,41 +2,38 @@
 
 A Next.js app that generates interactive, tool-driven dashboards with the Thesys C1 artifact endpoint and renders them with `<C1Chat />`.
 
-[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+[Built with Thesys](https://thesys.dev)
 
 ## Get started
 
 1. Copy the env file and set your Thesys API key:
-
-   ```bash
+  ```bash
    cp example.env .env
-   ```
-
+  ```
 2. Install and run:
-
-   ```bash
+  ```bash
    npm install
    npm run dev
-   ```
-
-3. Open http://localhost:3000 and try a prompt like:
-
-   ```
+  ```
+3. Open [http://localhost:3000](http://localhost:3000) and try a prompt like:
+  ```
    Show me last 14 days of usage with top endpoints and an error breakdown.
-   ```
+  ```
 
 ---
 
 # Tools guide
 
-Dashboards are powered by **tools**. The model emits OpenUI Lang code with `Query("tool_name", ...)` and `Mutation("tool_name", ...)` calls; the client supplies a **`toolProvider`** that fulfills those calls at render time. See the [OpenUI Lang renderer docs](https://www.openui.com/docs/openui-lang/renderer#props) for the full prop reference.
+Dashboards are powered by **tools**. The model emits OpenUI Lang code with `Query("tool_name", ...)` and `Mutation("tool_name", ...)` calls; the client supplies a `**toolProvider`** that fulfills those calls at render time. See the [OpenUI Lang renderer docs](https://www.openui.com/docs/openui-lang/renderer#props) for the full prop reference.
 
 There are two halves to wire up, and the tool names must match exactly:
 
-| Where             | What                                                | Example file in this repo                  |
-| ----------------- | --------------------------------------------------- | ------------------------------------------ |
-| Server            | Tool **definitions** (name, description, schemas)   | `src/app/api/chat/mock-c1-app-tools.ts`    |
-| Client (browser)  | `toolProvider` that runs when a tool is called      | `src/c1AppToolProvider.ts`                 |
+
+| Where            | What                                              | Example file in this repo               |
+| ---------------- | ------------------------------------------------- | --------------------------------------- |
+| Server           | Tool **definitions** (name, description, schemas) | `src/app/api/chat/mock-c1-app-tools.ts` |
+| Client (browser) | `toolProvider` that runs when a tool is called    | `src/c1AppToolProvider.ts`              |
+
 
 ## How a tool call flows
 
@@ -69,12 +66,14 @@ const llmStream = await client.chat.completions.create({
 
 The `thesys` payload shape:
 
-| Field                | Type                       | Required | Description                                                                                                          |
-| -------------------- | -------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
-| `c1_artifact_type`   | `"c1app"`                  | Yes      | Selects the c1app (dashboard) artifact mode.                                                                         |
-| `app.tools`          | `C1AppToolDefinition[]`    | No       | Tools the model is allowed to call. Defaults to `[]`. See the tool-definition shape below.                           |
-| `app.appId`          | `string`                   | No       | Stable identifier for the dashboard. Keep it consistent across turns in the same thread so edits target the same app. |
-| `app.title`          | `string`                   | No       | Human-readable title shown in the artifact header.                                                                   |
+
+| Field              | Type                    | Required | Description                                                                                                           |
+| ------------------ | ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `c1_artifact_type` | `"c1app"`               | Yes      | Selects the c1app (dashboard) artifact mode.                                                                          |
+| `app.tools`        | `C1AppToolDefinition[]` | No       | Tools the model is allowed to call. Defaults to `[]`. See the tool-definition shape below.                            |
+| `app.appId`        | `string`                | No       | Stable identifier for the dashboard. Keep it consistent across turns in the same thread so edits target the same app. |
+| `app.title`        | `string`                | No       | Human-readable title shown in the artifact header.                                                                    |
+
 
 Each tool definition has four fields:
 
@@ -249,3 +248,4 @@ The server-side tool definitions and the `toolProvider` shape are identical — 
 ├── package.json
 └── tsconfig.json
 ```
+

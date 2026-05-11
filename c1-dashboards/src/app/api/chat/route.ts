@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   };
 
   const client = new OpenAI({
-    baseURL: "http://localhost:3102/v1/artifact",
+    baseURL: "https://api.thesys.dev/v1/artifact",
     apiKey: process.env.THESYS_API_KEY,
   });
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   console.log(messages)
 
   const llmStream = await client.chat.completions.create({
-    model: "c1/google/gemini-3.1-pro/v-20260331",
+    model: "c1/google/gemini-3.1-pro/v-20260331", // Model can be changed: https://docs.thesys.dev/api-reference/models-and-compatibility#model-coverage
     messages: [
       {
         role: "system",
