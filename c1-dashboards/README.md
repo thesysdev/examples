@@ -2,23 +2,28 @@
 
 A Next.js app that generates interactive, tool-driven dashboards with the Thesys C1 artifact endpoint and renders them with `<C1Chat />`.
 
-[Built with Thesys](https://thesys.dev)
+[![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
 
 ## Get started
 
 1. Copy the env file and set your Thesys API key:
-  ```bash
+
+   ```bash
    cp example.env .env
-  ```
+   ```
+
 2. Install and run:
-  ```bash
+
+   ```bash
    npm install
    npm run dev
-  ```
+   ```
+
 3. Open [http://localhost:3000](http://localhost:3000) and try a prompt like:
-  ```
+
+   ```
    Show me last 14 days of usage with top endpoints and an error breakdown.
-  ```
+   ```
 
 ---
 
