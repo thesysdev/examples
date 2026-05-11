@@ -16,14 +16,16 @@ export async function POST(req: NextRequest) {
     responseId: string;
   };
 
+  if (!threadId) {
+    return new Response("threadId is required", { status: 400 });
+  }
+
   const client = new OpenAI({
     baseURL: "https://api.thesys.dev/v1/artifact",
     apiKey: process.env.THESYS_API_KEY,
   });
 
   const appId = `dashboard-${threadId}`;
-
-  console.log(messages)
 
   const llmStream = await client.chat.completions.create({
     model: "c1/google/gemini-3.1-pro/v-20260331", // Model can be changed: https://docs.thesys.dev/api-reference/models-and-compatibility#model-coverage
