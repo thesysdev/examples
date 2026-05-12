@@ -1,8 +1,35 @@
 # C1 Dashboards
 
-A Next.js app that generates interactive, tool-driven dashboards with the Thesys C1 artifact endpoint and renders them with `<C1Chat />`.
+A Next.js app that generates interactive, tool-driven dashboards using the Thesys **C1 Artifacts API** and renders them with `<C1Chat />`.
 
 [![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
+
+## Dashboards are a type of artifact
+
+> **Heads up:** This example talks to the **C1 Artifacts API**, not the regular C1 chat endpoint.
+>
+> The Artifacts API can produce several kinds of long-lived, interactive outputs ("artifacts"). Dashboards are one such kind — specifically the **`c1app`** artifact type. Picking `c1app` is what makes the model emit a tool-driven, editable dashboard instead of a one-shot chat reply.
+
+Two things have to line up for that to happen:
+
+1. The OpenAI client must point at the artifact endpoint:
+   ```ts
+   const client = new OpenAI({
+     baseURL: "https://api.thesys.dev/v1/artifact",
+     apiKey: process.env.THESYS_API_KEY,
+   });
+   ```
+2. The chat-completion request must declare the artifact type via `metadata.thesys`:
+   ```ts
+   metadata: {
+     thesys: JSON.stringify({
+       c1_artifact_type: "c1app", // <- this is what makes it a dashboard
+       app: { tools, appId, title },
+     }),
+   }
+   ```
+
+If either is missing, you'll get a regular chat response — not a dashboard. The full wire-up is covered in the [Tools guide](#tools-guide) below; the [Thesys API reference](https://docs.thesys.dev/api-reference/models-and-compatibility) lists the other artifact types.
 
 ## Get started
 
@@ -29,16 +56,14 @@ A Next.js app that generates interactive, tool-driven dashboards with the Thesys
 
 # Tools guide
 
-Dashboards are powered by **tools**. The model emits OpenUI Lang code with `Query("tool_name", ...)` and `Mutation("tool_name", ...)` calls; the client supplies a `**toolProvider`** that fulfills those calls at render time. See the [OpenUI Lang renderer docs](https://www.openui.com/docs/openui-lang/renderer#props) for the full prop reference.
+Dashboards are powered by **tools**. The model emits OpenUI Lang code with `Query("tool_name", ...)` and `Mutation("tool_name", ...)` calls; the client supplies a `**toolProvider`\*\* that fulfills those calls at render time. See the [OpenUI Lang renderer docs](https://www.openui.com/docs/openui-lang/renderer#props) for the full prop reference.
 
 There are two halves to wire up, and the tool names must match exactly:
-
 
 | Where            | What                                              | Example file in this repo               |
 | ---------------- | ------------------------------------------------- | --------------------------------------- |
 | Server           | Tool **definitions** (name, description, schemas) | `src/app/api/chat/mock-c1-app-tools.ts` |
 | Client (browser) | `toolProvider` that runs when a tool is called    | `src/c1AppToolProvider.ts`              |
-
 
 ## How a tool call flows
 
@@ -48,12 +73,30 @@ There are two halves to wire up, and the tool names must match exactly:
 
 ## 1. Server: define your tools
 
-In your `/api/chat` route, configure the C1 artifact endpoint by passing a `metadata.thesys` field on the chat completion request. The field is a JSON-stringified object that tells the endpoint what kind of artifact you want and which tools are available to it:
+### Point the OpenAI client at the Artifacts API
+
+As called out above, dashboards live on the **Artifacts API** (`https://api.thesys.dev/v1/artifact`), not the standard chat endpoint. The endpoint is OpenAI-compatible, so you keep using the `openai` SDK — just override `baseURL`:
+
+```ts
+// src/app/api/chat/route.ts
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://api.thesys.dev/v1/artifact",
+  apiKey: process.env.THESYS_API_KEY,
+});
+```
+
+Using the regular `https://api.thesys.dev/v1` base URL will not produce an artifact — the request has to land on the artifact endpoint for `c1_artifact_type` to be honored.
+
+### Declare the artifact via `metadata.thesys`
+
+With the artifact-endpoint client in hand, tell the endpoint **which artifact type to produce** and pass the tools it can call. This is done with a `metadata.thesys` field — a JSON-stringified object — on the chat completion request:
 
 ```ts
 // src/app/api/chat/route.ts
 const llmStream = await client.chat.completions.create({
-  model: "c1/openai/gpt-5.5/v-20260331",
+  model: "c1/google/gemini-3.1-pro/v-20260331",
   messages: [...],
   stream: true,
   metadata: {
@@ -71,14 +114,12 @@ const llmStream = await client.chat.completions.create({
 
 The `thesys` payload shape:
 
-
 | Field              | Type                    | Required | Description                                                                                                           |
 | ------------------ | ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `c1_artifact_type` | `"c1app"`               | Yes      | Selects the c1app (dashboard) artifact mode.                                                                          |
+| `c1_artifact_type` | `"c1app"`               | Yes      | Selects the artifact type. `"c1app"` is the dashboard artifact — the one this example demonstrates.                   |
 | `app.tools`        | `C1AppToolDefinition[]` | No       | Tools the model is allowed to call. Defaults to `[]`. See the tool-definition shape below.                            |
 | `app.appId`        | `string`                | No       | Stable identifier for the dashboard. Keep it consistent across turns in the same thread so edits target the same app. |
 | `app.title`        | `string`                | No       | Human-readable title shown in the artifact header.                                                                    |
-
 
 Each tool definition has four fields:
 
@@ -253,4 +294,3 @@ The server-side tool definitions and the `toolProvider` shape are identical — 
 ├── package.json
 └── tsconfig.json
 ```
-
