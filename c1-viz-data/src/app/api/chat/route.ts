@@ -1,0 +1,453 @@
+import { NextRequest } from "next/server";
+import OpenAI from "openai";
+import {
+  addMessages,
+  getAIThreadMessages,
+  AIMessage,
+  UIMessage,
+} from "@/src/services/threadService";
+import { transformStream } from "@crayonai/stream";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions.mjs";
+import { mcpClient, ensureMCPConnection } from "./tools";
+
+type ThreadId = string;
+
+// Standard OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Thesys Visualize client
+const thesysClient = new OpenAI({
+  baseURL: "https://api.thesys.dev/v1/visualize",
+  apiKey: process.env.THESYS_API_KEY,
+});
+
+const SYSTEM_PROMPT = `You are a helpful data analyst assistant with access to a live Supabase database. Your goal is to help users query, analyze, and visualize data from the database, including social media sentiment analysis.
+
+**CRITICAL: You MUST use the available Supabase tools for ALL data queries. Never provide analysis based on assumed or cached data.**
+
+**Your Workflow (MANDATORY - Follow in Order):**
+1.  **ALWAYS Query First:** For ANY data request, you MUST use Supabase tools (execute_sql, list_tables) to get current data from the database.
+2.  **Never Assume Data:** Do not provide analysis based on training data or assumptions. Always query the live database first.
+3.  **Visualize the Data:** After getting real data, create meaningful visualizations using the visualization tools available. Choose appropriate chart types (bar, line, pie, scatter, etc.) based on the data.
+4.  **Show Raw Data:** Always include the raw query results in a table format so users can see the underlying data.
+5.  **Provide Insights:** Offer meaningful analysis and key findings from the actual results.
+
+**Social Media Sentiment Analysis:**
+- When analyzing social media sentiment, query the database for posts, comments, reviews, or other social media content
+- Analyze sentiment patterns: positive, negative, neutral, or use a scale (e.g., -1 to +1, or 0-100)
+- Identify trends over time: track sentiment changes by date, product, topic, or other relevant dimensions
+- Segment sentiment by categories: brand mentions, product features, customer service, etc.
+- Create visualizations showing:
+  - Sentiment distribution (pie charts, bar charts)
+  - Sentiment trends over time (line charts)
+  - Sentiment by category or topic (grouped bar charts, stacked charts)
+  - Word clouds or frequency analysis of keywords in positive/negative posts
+- Provide actionable insights: highlight what's driving positive or negative sentiment, identify emerging issues, suggest areas for improvement
+
+**Database Discovery:**
+- Use list_tables to discover available tables and their schemas
+- Use execute_sql to query the data
+- Adapt your queries based on the actual schema discovered
+- Look for tables containing social media data, posts, comments, reviews, or sentiment scores
+
+**Response Format:**
+1. First, query the database using available tools
+2. Then provide:
+   - **Visualizations**: Create relevant charts/graphs based on the data (including sentiment-specific visualizations when applicable)
+   - **Raw Data**: Display the complete query results in a table
+   - **Summary/Insights**: Key findings and analysis from the actual data, including sentiment patterns and trends
+
+**IMPORTANT:**
+- You MUST use execute_sql or other Supabase tools for every data request
+- Never provide data analysis without first querying the database
+- Always visualize the data when appropriate
+- Always show the raw data in addition to visualizations
+- Base everything on actual query results, not assumptions
+- For sentiment analysis, ensure you're working with actual social media data from the database, not simulated or assumed data
+`;
+
+export async function POST(req: NextRequest) {
+  const { prompt, threadId, responseId } = (await req.json()) as {
+    prompt: AIMessage;
+    threadId: ThreadId;
+    responseId: string;
+  };
+
+  try {
+    // Ensure MCP connection is established
+    await ensureMCPConnection();
+
+    // Store raw data from tool calls for frontend display
+    const rawDataForFrontend: Array<{
+      toolName: string;
+      args: Record<string, unknown>;
+      data: unknown;
+    }> = [];
+
+    // --- Step 1: Call Standard OpenAI API ---
+
+    const previousAiMessages = await getAIThreadMessages(threadId);
+
+    // Add instruction to force database queries for data requests
+    const userContent =
+      typeof prompt.content === "string"
+        ? prompt.content
+        : JSON.stringify(prompt.content);
+    const contentLower = userContent.toLowerCase();
+    const enhancedUserContent =
+      contentLower.includes("data") ||
+      contentLower.includes("product") ||
+      contentLower.includes("sale") ||
+      contentLower.includes("customer") ||
+      contentLower.includes("show") ||
+      contentLower.includes("top") ||
+      contentLower.includes("list")
+        ? `${userContent}\n\nIMPORTANT: You must query the database using the available Supabase tools to get current data. Do not use cached or assumed data.`
+        : userContent;
+
+    // Use standard OpenAI completion with MCP tools available
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...previousAiMessages,
+        {
+          role: "user",
+          content: enhancedUserContent,
+        } as ChatCompletionMessageParam,
+      ],
+      temperature: 0.1,
+      tools: mcpClient.tools,
+      tool_choice: "auto",
+    });
+
+    let finalMessages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...previousAiMessages,
+      { role: "user", content: prompt.content! } as ChatCompletionMessageParam,
+      completion.choices[0].message,
+    ] as ChatCompletionMessageParam[];
+
+    // Debug: Log the completion message
+    console.log(
+      "OpenAI completion message:",
+      JSON.stringify(completion.choices[0].message, null, 2)
+    );
+    console.log(
+      "Tool calls present:",
+      !!completion.choices[0].message.tool_calls
+    );
+    console.log(
+      "Number of tool calls:",
+      completion.choices[0].message.tool_calls?.length || 0
+    );
+
+    // Handle tool calls if present
+    if (completion.choices[0].message.tool_calls) {
+      const toolResults = await Promise.all(
+        completion.choices[0].message.tool_calls.map(async (toolCall) => {
+          const result = await mcpClient.runTool({
+            tool_call_id: toolCall.id,
+            name: toolCall.function.name,
+            args: JSON.parse(toolCall.function.arguments),
+          });
+
+          console.log("Tool result:", result);
+
+          // Extract raw data for frontend display if it's a database query
+          try {
+            // Handle Supabase MCP response format
+            let content = result.content;
+            console.log("Raw MCP content:", content);
+
+            // Parse the outer JSON structure first
+            try {
+              const outerParsed = JSON.parse(content);
+              if (
+                Array.isArray(outerParsed) &&
+                outerParsed[0]?.type === "text"
+              ) {
+                content = outerParsed[0].text;
+                console.log("Extracted text content:", content);
+              }
+            } catch {
+              // Content might already be a string, continue
+            }
+
+            // Look for the untrusted-data tags that contain the actual JSON
+            const startTag = content.indexOf("<untrusted-data-");
+            const endTag = content.indexOf("</untrusted-data-");
+
+            if (startTag !== -1 && endTag !== -1) {
+              // Find the end of the opening tag
+              const openTagEnd = content.indexOf(">", startTag);
+              if (openTagEnd !== -1 && openTagEnd < endTag) {
+                const rawJsonData = content
+                  .substring(openTagEnd + 1, endTag)
+                  .trim();
+
+                console.log("Raw JSON data from untrusted tags:", rawJsonData);
+
+                // The data might have extra text before the JSON array
+                // Look for the JSON array start
+                const jsonArrayStart = rawJsonData.indexOf("[");
+                const jsonArrayEnd = rawJsonData.lastIndexOf("]") + 1;
+
+                if (jsonArrayStart !== -1 && jsonArrayEnd > jsonArrayStart) {
+                  const cleanJsonData = rawJsonData
+                    .substring(jsonArrayStart, jsonArrayEnd)
+                    .trim();
+
+                  console.log("Clean JSON data:", cleanJsonData);
+
+                  // Handle multiple levels of JSON escaping
+                  try {
+                    // The JSON data is double-escaped, so we need to parse it as a JSON string first
+                    let actualData;
+
+                    try {
+                      // Try parsing the clean data as a JSON-encoded string
+                      actualData = JSON.parse(`"${cleanJsonData}"`);
+                      console.log("Parsed as JSON string:", actualData);
+
+                      // Now parse the result as actual JSON
+                      actualData = JSON.parse(actualData);
+                    } catch {
+                      console.log(
+                        "First parsing attempt failed, trying direct parse"
+                      );
+                      // Fallback: try direct parsing with manual quote replacement
+                      const manuallyFixed = cleanJsonData.replace(/\\"/g, '"');
+                      actualData = JSON.parse(manuallyFixed);
+                    }
+
+                    // If it's still a string, it might be double-encoded JSON
+                    if (typeof actualData === "string") {
+                      actualData = JSON.parse(actualData);
+                    }
+
+                    console.log(
+                      "Extracted data from MCP response:",
+                      actualData
+                    );
+                    console.log(
+                      "Is array:",
+                      Array.isArray(actualData),
+                      "Length:",
+                      actualData?.length
+                    );
+
+                    if (Array.isArray(actualData) && actualData.length > 0) {
+                      rawDataForFrontend.push({
+                        toolName: toolCall.function.name,
+                        args: JSON.parse(toolCall.function.arguments),
+                        data: actualData,
+                      });
+                      console.log(
+                        "Added data to rawDataForFrontend. New length:",
+                        rawDataForFrontend.length
+                      );
+                    } else {
+                      console.log("Data not added - either not array or empty");
+                    }
+                  } catch (parseError) {
+                    console.error(
+                      "Failed to parse clean JSON data:",
+                      parseError
+                    );
+                    console.error(
+                      "Clean JSON data that failed:",
+                      cleanJsonData
+                    );
+                  }
+                } else {
+                  console.log(
+                    "Could not find JSON array boundaries in:",
+                    rawJsonData
+                  );
+                }
+              }
+            } else {
+              console.log(
+                "No untrusted-data tags found, trying fallback parsing"
+              );
+              // Fallback: try to parse the entire content as JSON
+              try {
+                const parsedContent = JSON.parse(content);
+                if (Array.isArray(parsedContent) && parsedContent.length > 0) {
+                  rawDataForFrontend.push({
+                    toolName: toolCall.function.name,
+                    args: JSON.parse(toolCall.function.arguments),
+                    data: parsedContent,
+                  });
+                  console.log("Added data via fallback method");
+                }
+              } catch (fallbackError) {
+                console.log("Fallback parsing also failed:", fallbackError);
+              }
+            }
+          } catch (outerError) {
+            console.error("Content processing failed:", outerError);
+          }
+
+          return result;
+        })
+      );
+
+      // Add tool results to messages
+      finalMessages = [...finalMessages, ...toolResults];
+
+      // Get final response after tool calls
+      const finalCompletion = await openai.chat.completions.create({
+        model: "gpt-4.1",
+        messages: finalMessages,
+        temperature: 0.1,
+      });
+
+      finalMessages.push(finalCompletion.choices[0].message);
+    }
+
+    // Messages are already prepared above
+
+    // Find the user message and the final assistant message(s) from the run
+    const newAiMessagesToStore: AIMessage[] = [];
+    const newUIMessagesToStore: UIMessage[] = [];
+
+    // Add the original user prompt with its ID
+    newAiMessagesToStore.push(prompt);
+    newUIMessagesToStore.push(prompt);
+
+    // Add messages generated during the OpenAI run (assistant responses, tool calls/results)
+    finalMessages.forEach((msg) => {
+      if (
+        !previousAiMessages.some(
+          (prevMsg) => JSON.stringify(prevMsg) === JSON.stringify(msg)
+        )
+      ) {
+        if (msg.role !== "user") {
+          newAiMessagesToStore.push({
+            ...msg,
+            id: crypto.randomUUID(),
+          } as AIMessage);
+        }
+      }
+    });
+
+    // --- Step 3: Extract Final Assistant Content for Thesys ---
+
+    // Find the last assistant message that is intended for the user
+    const finalAssistantMessageForUI = finalMessages
+      .filter((m) => m.role === "assistant" && m.content)
+      .pop();
+
+    if (
+      !finalAssistantMessageForUI ||
+      typeof finalAssistantMessageForUI.content !== "string"
+    ) {
+      console.error(
+        "No final assistant message content found after OpenAI run."
+      );
+      return new Response("", { status: 200 });
+    }
+
+    // console.log(
+    //   "finalAssistantMessageForUI",
+    //   finalAssistantMessageForUI.content
+    // );
+
+    // --- Step 4: Call Thesys  API and Stream to Client ---
+    const thesysStreamRunner = thesysClient.beta.chat.completions.runTools({
+      model: "c1/anthropic/claude-sonnet-4/v-20250915",
+      messages: [
+        ...previousAiMessages,
+        {
+          role: "user",
+          content: prompt.content!,
+        } as ChatCompletionMessageParam,
+        { role: "assistant", content: finalAssistantMessageForUI.content },
+      ],
+      stream: true,
+      tools: [],
+    });
+
+    const allThesysMessages: ChatCompletionMessageParam[] = [];
+
+    thesysStreamRunner.on("message", (message) => {
+      allThesysMessages.push(message);
+    });
+
+    console.log("rawDataForFrontend before Thesys call:", rawDataForFrontend);
+
+    thesysStreamRunner.on("end", async () => {
+      // --- Step 5: Store Final UI Message with Raw Data ---
+      const finalUIMessageFromStream =
+        allThesysMessages[allThesysMessages.length - 1];
+
+      if (finalUIMessageFromStream) {
+        const uiMessageToStore: UIMessage = {
+          ...finalUIMessageFromStream,
+          id: responseId,
+          // Add raw data to the UI message for frontend access
+          rawData:
+            rawDataForFrontend.length > 0 ? rawDataForFrontend : undefined,
+        };
+        newUIMessagesToStore.push(uiMessageToStore);
+        await addMessages(threadId, newAiMessagesToStore, newUIMessagesToStore);
+      }
+    });
+
+    const llmStream = await thesysStreamRunner;
+
+    // Transform the stream to include content
+    const responseStream = transformStream(llmStream, (chunk) => {
+      return chunk.choices[0]?.delta?.content || "";
+    });
+
+    // Create a new stream that appends raw data at the end
+    const enhancedStream = new ReadableStream({
+      start(controller) {
+        const reader = (responseStream as ReadableStream).getReader();
+
+        const pump = async () => {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+
+              if (done) {
+                // Send raw data as the final chunk if available
+                if (rawDataForFrontend.length > 0) {
+                  const dataChunk = `\n\n__RAW_DATA__${JSON.stringify(
+                    rawDataForFrontend
+                  )}__END_RAW_DATA__`;
+                  controller.enqueue(new TextEncoder().encode(dataChunk));
+                }
+                controller.close();
+                break;
+              }
+
+              // Forward the chunk
+              controller.enqueue(value);
+            }
+          } catch (error) {
+            controller.error(error);
+          }
+        };
+
+        pump();
+      },
+    });
+
+    return new Response(enhancedStream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error) {
+    console.error("Error in chat route:", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+}
