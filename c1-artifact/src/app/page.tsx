@@ -19,6 +19,9 @@ export default function Home() {
     send,
     stop,
     clear,
+    versions,
+    currentVersionIndex,
+    selectVersion,
   } = useArtifactStream();
 
   const suggestions = [
@@ -38,6 +41,9 @@ export default function Home() {
           artifactType={artifactType}
           onClear={clear}
           isLoading={isLoading}
+          versions={versions}
+          currentVersionIndex={currentVersionIndex}
+          onSelectVersion={selectVersion}
         />
 
         <Suggestions items={suggestions} onSelect={(s) => send(s)} />

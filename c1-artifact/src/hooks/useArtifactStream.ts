@@ -4,17 +4,49 @@ import { useCallback, useRef, useState } from "react";
 
 export type ArtifactType = "slides" | "report";
 
+export interface Version {
+  id: number;
+  content: string;
+  prompt: string;
+  timestamp: number;
+}
+
 export function useArtifactStream() {
   const [prompt, setPrompt] = useState("");
   const [artifact, setArtifact] = useState("");
   const [artifactType, setArtifactType] = useState<ArtifactType>("slides");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [versions, setVersions] = useState<Version[]>([]);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState<number>(-1);
 
   const abortRef = useRef<AbortController | null>(null);
   const previousArtifactRef = useRef<string>("");
   const artifactIdRef = useRef<string>("");
   const currentArtifactTypeRef = useRef<ArtifactType>("slides");
+
+  const fetchVersions = useCallback(async (artifactId: string) => {
+    try {
+      const res = await fetch(`/api/versions/${encodeURIComponent(artifactId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setVersions(data.versions || []);
+        // Set current version to the latest
+        if (data.versions && data.versions.length > 0) {
+          setCurrentVersionIndex(data.versions.length - 1);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch versions:", err);
+    }
+  }, []);
+
+  const selectVersion = useCallback((index: number) => {
+    if (index >= 0 && index < versions.length) {
+      setCurrentVersionIndex(index);
+      setArtifact(versions[index].content);
+    }
+  }, [versions]);
 
   const changeArtifactType = useCallback((newType: ArtifactType) => {
     setArtifactType(newType);
@@ -22,6 +54,8 @@ export function useArtifactStream() {
     setArtifact("");
     artifactIdRef.current = "";
     currentArtifactTypeRef.current = newType;
+    setVersions([]);
+    setCurrentVersionIndex(-1);
   }, []);
 
   const send = useCallback(
@@ -41,6 +75,8 @@ export function useArtifactStream() {
       if (!artifact) {
         artifactIdRef.current = `artifact-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         currentArtifactTypeRef.current = artifactType;
+        setVersions([]);
+        setCurrentVersionIndex(-1);
       }
 
       try {
@@ -74,6 +110,14 @@ export function useArtifactStream() {
 
         accumulated += decoder.decode();
         setArtifact(accumulated);
+
+        // Fetch updated versions after generation completes
+        if (artifactIdRef.current) {
+          // Small delay to ensure the server has saved the version
+          setTimeout(() => {
+            fetchVersions(artifactIdRef.current);
+          }, 100);
+        }
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === "AbortError") {
           setArtifact(previousArtifactRef.current);
@@ -89,7 +133,7 @@ export function useArtifactStream() {
         abortRef.current = null;
       }
     },
-    [prompt, artifact, artifactType, isLoading]
+    [prompt, artifact, artifactType, isLoading, fetchVersions]
   );
 
   const stop = useCallback(() => {
@@ -104,6 +148,8 @@ export function useArtifactStream() {
     setArtifact("");
     artifactIdRef.current = "";
     setError(null);
+    setVersions([]);
+    setCurrentVersionIndex(-1);
   }, []);
 
   return {
@@ -117,5 +163,8 @@ export function useArtifactStream() {
     send,
     stop,
     clear,
+    versions,
+    currentVersionIndex,
+    selectVersion,
   } as const;
 }
