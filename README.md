@@ -1,5 +1,13 @@
 # Examples
 
+> **⚠️ This repository is archived and no longer maintained.**
+>
+> The examples here target the legacy C1 API. Up-to-date examples now live in the OpenUI repository:
+>
+> **https://github.com/thesysdev/openui/tree/main/examples**
+>
+> The content below is kept for historical reference only.
+
 A collection of example projects demonstrating various integrations and use cases.
 
 [![Built with Thesys](https://thesys.dev/built-with-thesys-badge.svg)](https://thesys.dev)
